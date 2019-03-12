@@ -1,0 +1,5 @@
+E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\Instagram-Checker.BLL.dll
+E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\Instagram-Checker.BLL.pdb
+E:\Projects\Instagram-Checker\Instagram-Checker.BLL\obj\Debug\Instagram-Checker.BLL.csprojResolveAssemblyReference.cache
+E:\Projects\Instagram-Checker\Instagram-Checker.BLL\obj\Debug\Instagram-Checker.BLL.dll
+E:\Projects\Instagram-Checker\Instagram-Checker.BLL\obj\Debug\Instagram-Checker.BLL.pdb

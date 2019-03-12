@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Instagram-Checker", "Instagram-Checker\Instagram-Checker.csproj", "{888F7A6B-E3BA-4013-96B7-AB45F70B89A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileLibrary", "FileLibrary\FileLibrary.csproj", "{ABB06141-DD16-4144-B0EA-19BB657EE7D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstagramLibrary", "InstagramLibrary\InstagramLibrary.csproj", "{BF832AE4-7689-4E4C-8ADF-664CE2CF7A38}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Instagram-Checker.BLL", "Instagram-Checker.BLL\Instagram-Checker.BLL.csproj", "{81AEC43A-9BF4-45A3-A253-363287B97920}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{888F7A6B-E3BA-4013-96B7-AB45F70B89A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{888F7A6B-E3BA-4013-96B7-AB45F70B89A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{888F7A6B-E3BA-4013-96B7-AB45F70B89A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{888F7A6B-E3BA-4013-96B7-AB45F70B89A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABB06141-DD16-4144-B0EA-19BB657EE7D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABB06141-DD16-4144-B0EA-19BB657EE7D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABB06141-DD16-4144-B0EA-19BB657EE7D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABB06141-DD16-4144-B0EA-19BB657EE7D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF832AE4-7689-4E4C-8ADF-664CE2CF7A38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF832AE4-7689-4E4C-8ADF-664CE2CF7A38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF832AE4-7689-4E4C-8ADF-664CE2CF7A38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF832AE4-7689-4E4C-8ADF-664CE2CF7A38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81AEC43A-9BF4-45A3-A253-363287B97920}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81AEC43A-9BF4-45A3-A253-363287B97920}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81AEC43A-9BF4-45A3-A253-363287B97920}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81AEC43A-9BF4-45A3-A253-363287B97920}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
