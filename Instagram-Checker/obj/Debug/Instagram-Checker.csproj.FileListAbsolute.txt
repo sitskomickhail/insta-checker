@@ -16,3 +16,10 @@ E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\Instagram_Checker.Prop
 E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\Instagram-Checker.csproj.GenerateResource.Cache
 E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\Instagram-Checker.exe
 E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\Instagram-Checker.pdb
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\Instagram-Checker.BLL.dll
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\Newtonsoft.Json.dll
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\Instagram-Checker.BLL.pdb
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\Newtonsoft.Json.pdb
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\Newtonsoft.Json.xml
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\InstaLog.dll
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\InstaLog.pdb

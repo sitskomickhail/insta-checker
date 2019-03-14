@@ -30,6 +30,12 @@
                    FontWeight="Bold"
                    FontSize="12"/>
         </Border>
+        <GroupBox Grid.Column="1" Header="Настройки">
+            <StackPanel>
+                <CheckBox IsEnabled="True" Content="Использовать ApiProxy" FontSize="11" Margin="0, 5, 0, 0"
+                          x:Name="cbApiProxy"/>
+            </StackPanel>
+        </GroupBox>
         <StackPanel Grid.Column="1" Grid.Row="1">
             <Button x:Name="btnLoad"
                     Content="Загрузить данные"

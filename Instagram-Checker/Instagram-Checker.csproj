@@ -100,9 +100,17 @@
       <Project>{abb06141-dd16-4144-b0ea-19bb657ee7d4}</Project>
       <Name>FileLibrary</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Instagram-Checker.BLL\Instagram-Checker.BLL.csproj">
+      <Project>{81AEC43A-9BF4-45A3-A253-363287B97920}</Project>
+      <Name>Instagram-Checker.BLL</Name>
+    </ProjectReference>
     <ProjectReference Include="..\InstagramLibrary\InstagramLibrary.csproj">
       <Project>{bf832ae4-7689-4e4c-8adf-664ce2cf7a38}</Project>
       <Name>InstagramLibrary</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\InstaLog\InstaLog.csproj">
+      <Project>{AB50291F-44D8-4E51-9247-EA6B739B6938}</Project>
+      <Name>InstaLog</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

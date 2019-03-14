@@ -6,3 +6,5 @@ E:\Projects\Instagram-Checker\FileLibrary\obj\Debug\FileLibrary.pdb
 E:\Projects\Instagram-Checker\FileLibrary\bin\Debug\Newtonsoft.Json.dll
 E:\Projects\Instagram-Checker\FileLibrary\bin\Debug\Newtonsoft.Json.pdb
 E:\Projects\Instagram-Checker\FileLibrary\bin\Debug\Newtonsoft.Json.xml
+E:\Projects\Instagram-Checker\FileLibrary\bin\Debug\InstaLog.dll
+E:\Projects\Instagram-Checker\FileLibrary\bin\Debug\InstaLog.pdb

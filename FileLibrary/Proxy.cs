@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Configuration;
+using InstaLog;
 
 namespace FileLibrary
 {
@@ -15,6 +15,7 @@ namespace FileLibrary
     {
         private List<Dictionary<string, object>> _insta_proxies;
         private List<Dictionary<string, object>> _mail_proxies;
+        LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
 
         private List<Thread> _threads;
 
@@ -28,6 +29,7 @@ namespace FileLibrary
             _mail_proxies = new List<Dictionary<string, object>>();
         }
 
+        public int CountProxy { get { return _insta_proxies.Count() + _mail_proxies.Count; } }
 
         public bool GetProxy()
         {
@@ -47,13 +49,28 @@ namespace FileLibrary
                 using (var sr = new StreamReader(s))
                 {
                     var contributorsAsJson = sr.ReadToEnd();
-                    var result = JsonConvert.DeserializeObject<Rootobject>(contributorsAsJson);
+                    var result = JsonConvert.DeserializeObject<List<ApiProxy>>(contributorsAsJson);
 
-                    for (int i = 0; i < result.Property1.Count() / 2; i++)
+
+                    for (int i = 0; i < result.Count / 2; i++)
                     {
-                        
-                    }
+                        Dictionary<string, object> prxInst = new Dictionary<string, object>();
+                        prxInst.Add("ip", result[i].ip);
+                        prxInst.Add("port", Int32.Parse(result[i].port));
 
+                        _insta_proxies.Add(prxInst);
+
+                        try
+                        {
+                            Dictionary<string, object> prxMail = new Dictionary<string, object>();
+                            prxMail.Add("ip", result[i].ip);
+                            prxMail.Add("port", Int32.Parse(result[i].port));
+
+                            _mail_proxies.Add(prxMail);
+                        }
+                        catch { }
+                    }
+                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Api returned {result.Count} proxy accounts", Method = "Proxy.JSonProxy" });
                     s.Close();
                     sr.Close();
                 }
@@ -61,116 +78,134 @@ namespace FileLibrary
             return true;
         }
 
-        public bool InitProxyDictionary()
+        public bool InstaProxy_Init()
         {
             var time = DateTime.Now;
-            if (File.Exists(_instaProxyPath) && File.Exists(_mailProxyPath))
+            if (File.Exists(_instaProxyPath))
             {
-                int linesAVGcount = 100;
-
-                _threads.Add(new Thread(p =>
+                int count = 0;
+                string[] proxies = File.ReadAllLines(_instaProxyPath);
+                foreach (string instaProxy in proxies)
                 {
-                    List<Thread> thrds = new List<Thread>();
-                    string[] res = File.ReadAllLines(_instaProxyPath);
+                    string[] splited = instaProxy.Split(':');
 
-                    int countPosition = 0;
-                    int count = 0;
-                    int threadsCount = (int)Math.Floor((double)res.Count() % linesAVGcount);
-                    for (int i = 0; i < threadsCount; i++)
+                    Dictionary<string, object> dict = new Dictionary<string, object>();
+                    try
                     {
+                        dict.Add("port", Int32.Parse(splited[1]));
+                        dict.Add("ip", splited[0]);
 
-                        thrds.Add(new Thread(r =>
+                        count++;
+                        try
                         {
-                            if (countPosition == threadsCount - 1)
-                                count = res.Count();
-                            else
-                                count = countPosition * linesAVGcount + linesAVGcount + 100;
-                            countPosition++;
+                            dict.Add("login", splited[2]);
+                            dict.Add("password", splited[3]);
+                        }
+                        catch { }
 
-                            for (int j = countPosition * linesAVGcount; j < count; j++)
-                            {
-                                string str = res[j];
-                                string[] proxyInit = str.Split(':');
-
-                                Dictionary<string, object> dict = new Dictionary<string, object>();
-                                dict.Add("ip", proxyInit[0].ToString());
-                                //dict.Add("port", Int32.Parse(proxyInit[1]));
-                                //dict.Add("login", proxyInit[2].ToString());
-                                //dict.Add("pass", proxyInit[3].ToString());
-
-                                _insta_proxies.Add(dict);
-                            }
-
-                        }));
+                        _insta_proxies.Add(dict);
                     }
-
-                    foreach (Thread item in thrds)
-                    {
-                        item.Start();
-                        Thread.Sleep(1000);
-                    }
-                }));
-
-                _threads.Add(new Thread(p =>
-                {
-                    List<Thread> thrds = new List<Thread>();
-                    string[] res = File.ReadAllLines(_mailProxyPath);
-
-                    int countPosition = 0;
-                    int count = 0;
-                    int threadsCount = (int)Math.Floor((double)res.Count() % linesAVGcount);
-                    for (int i = 0; i < threadsCount; i++)
-                    {
-
-                        thrds.Add(new Thread(r =>
-                        {
-                            if (countPosition == threadsCount - 1)
-                                count = res.Count();
-                            else
-                                count = countPosition * linesAVGcount + linesAVGcount + 100;
-                            countPosition++;
-
-                            for (int j = countPosition * linesAVGcount; j < count; j++)
-                            {
-                                string str = res[j];
-                                string[] proxyInit = str.Split(':');
-
-                                Dictionary<string, object> dict = new Dictionary<string, object>();
-                                dict.Add("ip", proxyInit[0].ToString());
-                                //dict.Add("port", Int32.Parse(proxyInit[1]));
-                                //dict.Add("login", proxyInit[2].ToString());
-                                //dict.Add("pass", proxyInit[3].ToString());
-
-                                _mail_proxies.Add(dict);
-                            }
-
-                        }));
-                    }
-
-                    foreach (Thread item in thrds)
-                    {
-                        item.Start();
-                        Thread.Sleep(1000);
-                    }
-                }));
-
-
-                foreach (var thread in _threads)
-                {
-                    thread.Start();
+                    catch { }
                 }
+                logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Insta.txt returned {count} proxies", Method = "Proxy.InstaProxy_Init" });
             }
             else
             {
+                logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Insta.txt doesn't exist", Method = "Proxy.InstaProxy_Init" });
+                return false;
+            }
+            return true;
+        }
 
+        public bool MailProxy_Init()
+        {
+            var time = DateTime.Now;
+            if (File.Exists(_mailProxyPath))
+            {
+                int count = 0;
+                string[] proxies = File.ReadAllLines(_mailProxyPath);
+                foreach (string instaProxy in proxies)
+                {
+                    string[] splited = instaProxy.Split(':');
+
+                    Dictionary<string, object> dict = new Dictionary<string, object>();
+                    try
+                    {
+                        count++;
+                        dict.Add("port", Int32.Parse(splited[1]));
+                        dict.Add("ip", splited[0]);
+
+                        try
+                        {
+                            dict.Add("login", splited[2]);
+                            dict.Add("password", splited[3]);
+                        }
+                        catch { }
+
+                        _mail_proxies.Add(dict);
+                    }
+                    catch { }
+                }
+                logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Mail.txt returned {count} proxies", Method = "Proxy.MailProxy_Init" });
+            }
+            else
+            {
+                logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Mail.txt doesn't exist", Method = "Proxy.MailProxy_Init" });
+                return false;
             }
             return true;
         }
 
 
-        private void GetAllInfoFromFile(string filePath)
+        public void GetAllInfoFromFile()
         {
+            string path = @"\base\Proxy\";
 
+            if (Directory.Exists(Environment.CurrentDirectory + path))
+            {
+                int position = 0;
+                var result = Directory.GetFiles(Environment.CurrentDirectory + path, "*.txt", SearchOption.AllDirectories);
+
+                List<Thread> threads = new List<Thread>();
+                foreach (string file in result)
+                {
+                    int count = 0;
+                    string[] proxy = File.ReadAllLines(file);
+                    for (int i = 0; i < proxy.Count(); i++)
+                    {
+                        string[] splited = proxy[i].Split(':');
+
+                        Dictionary<string, object> dict = new Dictionary<string, object>();
+                        try
+                        {
+                            dict.Add("port", Int32.Parse(splited[1]));
+                            dict.Add("ip", splited[0]);
+
+                            try
+                            {
+                                dict.Add("login", splited[2]);
+                                dict.Add("password", splited[3]);
+                            }
+                            catch { }
+
+                            if (position == 0)
+                            {
+                                _mail_proxies.Add(dict);
+                                position = 1;
+                            }
+                            else
+                            {
+                                _insta_proxies.Add(dict);
+                                position = 0;
+                            }
+                            count++;
+                        }
+                        catch { }
+                    }
+                    string[] fileName = file.Split('\\');
+                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $@"file \base\{fileName[fileName.Count() - 1]} returned {count} proxies", Method = "Proxy.GetBase" });
+                }
+            }
         }
 
         #region PROPS
@@ -179,12 +214,6 @@ namespace FileLibrary
     }
 }
 
-
-
-public class Rootobject
-{
-    public ApiProxy[] Property1 { get; set; }
-}
 
 public class ApiProxy
 {
@@ -208,5 +237,5 @@ public class ApiProxy
     public string region { get; set; }
     public string real_ip { get; set; }
     public string test_time { get; set; }
-    public string me { get; set; }
+    public object me { get; set; }
 }
