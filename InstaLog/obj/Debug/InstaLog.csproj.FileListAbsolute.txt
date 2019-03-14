@@ -1,0 +1,5 @@
+E:\Projects\Instagram-Checker\InstaLog\bin\Debug\InstaLog.dll
+E:\Projects\Instagram-Checker\InstaLog\bin\Debug\InstaLog.pdb
+E:\Projects\Instagram-Checker\InstaLog\obj\Debug\InstaLog.csprojResolveAssemblyReference.cache
+E:\Projects\Instagram-Checker\InstaLog\obj\Debug\InstaLog.dll
+E:\Projects\Instagram-Checker\InstaLog\obj\Debug\InstaLog.pdb
