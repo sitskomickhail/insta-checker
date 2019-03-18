@@ -41,8 +41,7 @@ namespace Instagram_Checker
             btnLoad.IsEnabled = false;
             logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Start check info", UserName = null });
 
-            _model.InitProxy((bool)cbApiProxy.IsChecked ? true : false);
-            _model.InitAccounts();
+            _model.InitProxy((bool)cbApiProxy.IsChecked ? true : false, tbProxyKey.Text);
 
             BackgroundWorker worker = new BackgroundWorker();
             worker.DoWork += Worker_DoWork;
@@ -57,36 +56,59 @@ namespace Instagram_Checker
 
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
         {
+            
+            _model.InitAccounts();
+            _model.InitAccountsMail();
+
             int countMail = 0;
             int countPrx = 0;
+            int countAcc = 0;
             while (true)
             {
-                if (_model.IsAccountInited && _model.IsProxyInited)
+                if (_model.IsAccountInited && _model.IsProxyInited && _model.IsMailsReady)
                     break;
 
-                if (_model.IsAccountInited && countMail == 0)
+                if (_model.IsAccountInited && countAcc == 0)
                 {
-                    logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Accounts are ready", UserName = null });
-                    countMail++;
+                    logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready ({_model.GetAccounts.CountUsers})", UserName = null });
+                    countAcc++;
                 }
 
                 if (_model.IsProxyInited && countPrx == 0)
                 {
-                    logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Proxy are ready", UserName = null });
+                    logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Proxy are ready ({_model.GetProxy.CountProxy})", UserName = null });
                     countPrx++;
                 }
-            }
 
+                if (_model.IsMailsReady && countMail == 0)
+                {
+                    logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
+                    countMail++;
+                }
+            }
+            
             if (countPrx == 0)
-                logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Proxy are ready", UserName = null });
+                logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Proxy are ready ({_model.GetProxy.CountProxy})", UserName = null });
+            else if (countAcc == 0)
+                logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready ({_model.GetAccounts.CountUsers})", UserName = null });
             else if (countMail == 0)
-                logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Accounts are ready", UserName = null });
+                logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
+
+
+            _model.InitObjects();
+            while (!_model.IsObjectsReady) { }
+            logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Objects are resolved", UserName = null });
 
         }
 
         private void ShowLog(string tmp, Log log)
         {
             this.Dispatcher.Invoke(() => tbLog.Text = tbLog.Text + log + '\n');
+        }
+
+        private void btnStart_Click(object sender, RoutedEventArgs e)
+        {
+            _model.CheckAllAccounts();
         }
     }
 }

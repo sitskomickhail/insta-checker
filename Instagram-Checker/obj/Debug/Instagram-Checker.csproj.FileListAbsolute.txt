@@ -23,3 +23,4 @@ E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\Newtonsoft.Json.pdb
 E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\Newtonsoft.Json.xml
 E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\InstaLog.dll
 E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\InstaLog.pdb
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\InstaSharper.dll

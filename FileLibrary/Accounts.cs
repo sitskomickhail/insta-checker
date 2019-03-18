@@ -13,13 +13,15 @@ namespace FileLibrary
     {
         private List<Dictionary<string, string>> _users;
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
-        private const string path = @"\base\CheckMail\";
+        private const string path = @"\base\InstaLogins\";
         private int _filesCount;
         private int _currentPosition;
 
         public bool UsersReady { get; private set; }
 
         public int CountUsers { get { return _users.Count(); } }
+
+        public List<Dictionary<string, string>> Users { get { return _users; } }
 
         public Accounts()
         {
@@ -53,8 +55,8 @@ namespace FileLibrary
                 {
                     string[] splitted = user.Split(':');
                     Dictionary<string, string> dict = new Dictionary<string, string>();
-                    dict.Add("login", splitted[0]);
-                    dict.Add("password", splitted[1]);
+                    dict.Add("instaLogin", splitted[0]);
+                    dict.Add("instaPassword", splitted[1]);
 
                     _users.Add(dict);
                 }

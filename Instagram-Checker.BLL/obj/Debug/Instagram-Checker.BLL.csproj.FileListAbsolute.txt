@@ -6,7 +6,9 @@ E:\Projects\Instagram-Checker\Instagram-Checker.BLL\obj\Debug\Instagram-Checker.
 E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\FileLibrary.dll
 E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\Newtonsoft.Json.dll
 E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\FileLibrary.pdb
-E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\Newtonsoft.Json.pdb
 E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\Newtonsoft.Json.xml
 E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\InstaLog.dll
 E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\InstaLog.pdb
+E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\InstagramLibrary.dll
+E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\InstaSharper.dll
+E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\InstagramLibrary.pdb

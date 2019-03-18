@@ -5,15 +5,15 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Instagram_Checker"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
+        Title="MainWindow" Height="650" Width="755">
     <Grid Margin="5">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="0.45*"/>
             <ColumnDefinition Width="0.2*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1.6*"/>
+            <RowDefinition Height="0.6*"/>
         </Grid.RowDefinitions>
         <DataGrid Margin="0, 0, 0, 3">
             <DataGrid.Columns>
@@ -32,19 +32,32 @@
         </Border>
         <GroupBox Grid.Column="1" Header="Настройки">
             <StackPanel>
-                <CheckBox IsEnabled="True" Content="Использовать ApiProxy" FontSize="11" Margin="0, 5, 0, 0"
+                <CheckBox IsEnabled="True" Content="Использовать ApiProxy" FontSize="11" Margin="5, 5, 0, 0"
                           x:Name="cbApiProxy"/>
+                <TextBox x:Name="tbProxyKey"
+                         IsEnabled="{Binding ElementName=cbApiProxy, Path=IsChecked}"
+                         Margin="5"/>
+                <Button Content="Настройки прокси"
+                        x:Name="btnProxyOptions"
+                        Margin="5"/>
             </StackPanel>
         </GroupBox>
-        <StackPanel Grid.Column="1" Grid.Row="1">
-            <Button x:Name="btnLoad"
+        <Grid Grid.Column="1" Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="0.5*"/>
+                <RowDefinition Height="0.5*"/>
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Column="1" Grid.Row="1">
+                <Button x:Name="btnLoad"
                     Content="Загрузить данные"
-                    Margin="15, 80, 15, 10"
+                    Margin="10"
                     Click="btnLoad_Click"/>
-            <Button x:Name="btnStart"
+                <Button x:Name="btnStart"
                     Content="Старт"
-                    Margin="15, 10, 15, 10"
-                    IsEnabled="False"/>
-        </StackPanel>
+                    Margin="10"
+                    IsEnabled="False" Click="btnStart_Click"/>
+            </StackPanel>
+        </Grid>
+
     </Grid>
 </Window>

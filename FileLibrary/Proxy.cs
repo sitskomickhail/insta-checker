@@ -31,49 +31,60 @@ namespace FileLibrary
 
         public int CountProxy { get { return _insta_proxies.Count() + _mail_proxies.Count; } }
 
-        public bool GetProxy()
+        public bool GetProxy(string key)
         {
-            var connectionStrings = ConfigurationManager.ConnectionStrings;
-            string proxyKey = connectionStrings["proxyKey"].ConnectionString;
+            if (String.IsNullOrWhiteSpace(key))
+            {
+                logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy key doesn't exist", Method = "Proxy.JSonProxy" });
+                return false;
+            }
 
             HttpWebRequest webRequest = WebRequest.Create
-                ($"http://api.best-proxies.ru/proxylist.json?key={proxyKey}&limit=0")
+                ($"http://api.best-proxies.ru/proxylist.json?key={key}&limit=0")
                             as HttpWebRequest;
             if (webRequest == null)
                 return false;
 
             webRequest.ContentType = "application/json";
 
-            using (var s = webRequest.GetResponse().GetResponseStream())
+            try
             {
-                using (var sr = new StreamReader(s))
+                using (var s = webRequest.GetResponse().GetResponseStream())
                 {
-                    var contributorsAsJson = sr.ReadToEnd();
-                    var result = JsonConvert.DeserializeObject<List<ApiProxy>>(contributorsAsJson);
-
-
-                    for (int i = 0; i < result.Count / 2; i++)
+                    using (var sr = new StreamReader(s))
                     {
-                        Dictionary<string, object> prxInst = new Dictionary<string, object>();
-                        prxInst.Add("ip", result[i].ip);
-                        prxInst.Add("port", Int32.Parse(result[i].port));
+                        var contributorsAsJson = sr.ReadToEnd();
+                        var result = JsonConvert.DeserializeObject<List<ApiProxy>>(contributorsAsJson);
 
-                        _insta_proxies.Add(prxInst);
 
-                        try
+                        for (int i = 0; i < result.Count / 2; i++)
                         {
-                            Dictionary<string, object> prxMail = new Dictionary<string, object>();
-                            prxMail.Add("ip", result[i].ip);
-                            prxMail.Add("port", Int32.Parse(result[i].port));
+                            Dictionary<string, object> prxInst = new Dictionary<string, object>();
+                            prxInst.Add("ip", result[i].ip);
+                            prxInst.Add("port", Int32.Parse(result[i].port));
 
-                            _mail_proxies.Add(prxMail);
+                            _insta_proxies.Add(prxInst);
+
+                            try
+                            {
+                                Dictionary<string, object> prxMail = new Dictionary<string, object>();
+                                prxMail.Add("ip", result[i].ip);
+                                prxMail.Add("port", Int32.Parse(result[i].port));
+
+                                _mail_proxies.Add(prxMail);
+                            }
+                            catch { }
                         }
-                        catch { }
+                        logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Api returned {result.Count} proxy accounts", Method = "Proxy.JSonProxy" });
+                        s.Close();
+                        sr.Close();
                     }
-                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Api returned {result.Count} proxy accounts", Method = "Proxy.JSonProxy" });
-                    s.Close();
-                    sr.Close();
                 }
+            }
+            catch (Exception e)
+            {
+                logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = e.Message, Method = "Proxy.JSonProxy" });
+                return false;
             }
             return true;
         }
@@ -98,8 +109,8 @@ namespace FileLibrary
                         count++;
                         try
                         {
-                            dict.Add("login", splited[2]);
-                            dict.Add("password", splited[3]);
+                            dict.Add("proxyLogin", splited[2]);
+                            dict.Add("proxyPassword", splited[3]);
                         }
                         catch { }
 
