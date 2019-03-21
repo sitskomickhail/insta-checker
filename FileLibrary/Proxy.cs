@@ -59,8 +59,10 @@ namespace FileLibrary
 
                         for (int i = 0; i < result.Count / 2; i++)
                         {
+                            if (result[i].http != "1" && result[i].https != "1")
+                                continue;
                             Dictionary<string, object> prxInst = new Dictionary<string, object>();
-                            prxInst.Add("ip", result[i].ip);
+                            prxInst.Add("ip", result[i].real_ip);
                             prxInst.Add("port", Int32.Parse(result[i].port));
 
                             _insta_proxies.Add(prxInst);
@@ -68,7 +70,7 @@ namespace FileLibrary
                             try
                             {
                                 Dictionary<string, object> prxMail = new Dictionary<string, object>();
-                                prxMail.Add("ip", result[i].ip);
+                                prxMail.Add("ip", result[i].real_ip);
                                 prxMail.Add("port", Int32.Parse(result[i].port));
 
                                 _mail_proxies.Add(prxMail);
@@ -92,7 +94,7 @@ namespace FileLibrary
         public bool InstaProxy_Init()
         {
             var time = DateTime.Now;
-            if (File.Exists(_instaProxyPath))
+            if (System.IO.File.Exists(_instaProxyPath))
             {
                 int count = 0;
                 string[] proxies = File.ReadAllLines(_instaProxyPath);
@@ -131,7 +133,7 @@ namespace FileLibrary
         public bool MailProxy_Init()
         {
             var time = DateTime.Now;
-            if (File.Exists(_mailProxyPath))
+            if (System.IO.File.Exists(_mailProxyPath))
             {
                 int count = 0;
                 string[] proxies = File.ReadAllLines(_mailProxyPath);
@@ -148,8 +150,8 @@ namespace FileLibrary
 
                         try
                         {
-                            dict.Add("login", splited[2]);
-                            dict.Add("password", splited[3]);
+                            dict.Add("proxyLogin", splited[2]);
+                            dict.Add("proxyPassword", splited[3]);
                         }
                         catch { }
 
@@ -166,7 +168,7 @@ namespace FileLibrary
             }
             return true;
         }
-
+        
 
         public void GetAllInfoFromFile()
         {
@@ -194,8 +196,8 @@ namespace FileLibrary
 
                             try
                             {
-                                dict.Add("login", splited[2]);
-                                dict.Add("password", splited[3]);
+                                dict.Add("proxyLogin", splited[2]);
+                                dict.Add("proxyPassword", splited[3]);
                             }
                             catch { }
 
@@ -221,6 +223,7 @@ namespace FileLibrary
 
         #region PROPS
         public List<Dictionary<string, object>> InstaProxies { get { return _insta_proxies; } }
+        public List<Dictionary<string, object>> MailProxies { get { return _mail_proxies; } }
         #endregion
     }
 }

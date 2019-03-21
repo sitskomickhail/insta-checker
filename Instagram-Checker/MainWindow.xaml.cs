@@ -44,17 +44,17 @@ namespace Instagram_Checker
             _model.InitProxy((bool)cbApiProxy.IsChecked ? true : false, tbProxyKey.Text);
 
             BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += Worker_DoWork;
-            worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
+            worker.DoWork += Load_DoWork;
+            worker.RunWorkerCompleted += Load_RunWorkerCompleted;
             worker.RunWorkerAsync();
         }
 
-        private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private void Load_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             btnStart.IsEnabled = true;
         }
 
-        private void Worker_DoWork(object sender, DoWorkEventArgs e)
+        private void Load_DoWork(object sender, DoWorkEventArgs e)
         {
             
             _model.InitAccounts();
@@ -108,7 +108,25 @@ namespace Instagram_Checker
 
         private void btnStart_Click(object sender, RoutedEventArgs e)
         {
+            btnStart.IsEnabled = false;
             _model.CheckAllAccounts();
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += Start_DoWork;
+            worker.RunWorkerCompleted += Start_RunWorkerCompleted;
+        }
+
+        private void Start_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            MessageBox.Show("Програма успешно завершила свою работу");
+            btnLoad.IsEnabled = true;
+        }
+
+        private void Start_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while(_model.IsProgramComplitlyEnded)
+            {
+
+            }
         }
     }
 }

@@ -57,8 +57,8 @@ namespace FileLibrary
                     Dictionary<string, string> dict = new Dictionary<string, string>();
                     dict.Add("instaLogin", splitted[0]);
                     dict.Add("instaPassword", splitted[1]);
-
-                    _users.Add(dict);
+                    if (!(String.IsNullOrEmpty(splitted[0]) && String.IsNullOrEmpty(splitted[1])))
+                        _users.Add(dict);
                 }
                 catch { }
             }

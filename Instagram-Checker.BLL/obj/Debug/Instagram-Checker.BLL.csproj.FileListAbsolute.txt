@@ -12,3 +12,4 @@ E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\InstaLog.pdb
 E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\InstagramLibrary.dll
 E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\InstaSharper.dll
 E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\InstagramLibrary.pdb
+E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\Instagram-Checker.BLL.dll.config

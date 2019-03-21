@@ -1,12 +1,10 @@
 ﻿using FileLibrary;
 using InstagramLibrary;
 using InstaLog;
+using InstaSharper.Classes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Instagram_Checker.BLL
 {
@@ -16,18 +14,27 @@ namespace Instagram_Checker.BLL
         private Accounts _account;
         private HttpAndroid _android;
         private AccountsMail _accMails;
+        private FileWorker _fileWorker;
+
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
 
-        private List<object> _objects;
+
+        private List<object> _objectsInstaLogs;
+        private List<object> _objectsInstaProx;
+        object locker = new object();
 
         public bool IsProxyInited { get; private set; }
         public bool IsAccountInited { get; private set; }
         public bool IsObjectsReady { get; private set; }
         public bool IsMailsReady { get; private set; }
+        public bool IsProgramComplitlyEnded { get; private set; }
+        public List<string> AccountInfoDataSet { get; set; }
 
         public Proxy GetProxy { get { return _proxy; } }
         public Accounts GetAccounts { get { return _account; } }
         public AccountsMail GetAccountsMail { get { return _accMails; } }
+
+
 
         public Model()
         {
@@ -35,11 +42,14 @@ namespace Instagram_Checker.BLL
             IsAccountInited = false;
             IsObjectsReady = false;
             IsMailsReady = false;
+            IsProgramComplitlyEnded = false;
+            AccountInfoDataSet = new List<string>();
 
             _proxy = new Proxy();
             _account = new Accounts();
             _android = new HttpAndroid();
             _accMails = new AccountsMail();
+            _fileWorker = new FileWorker();
         }
 
         public void InitAccounts()
@@ -80,13 +90,21 @@ namespace Instagram_Checker.BLL
 
         public void CheckAllAccounts()
         {
+            int pos = 0;
             var proxy = _proxy.InstaProxies;
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += CheckInsta_DoWork;
-            string[] userOptions = new string[6] { "vi.tik", "кактусик", proxy[0]["ip"].ToString(), proxy[0]["port"].ToString(),
-                proxy[0]["login"].ToString(), proxy[0]["password"].ToString() };
+            foreach (var obj in _objectsInstaLogs)
+            {
+                BackgroundWorker worker = new BackgroundWorker();
+                worker.DoWork += CheckInsta_DoWork;
 
-            worker.RunWorkerAsync(userOptions);
+                try
+                {
+                    object[] options = new object[] { _objectsInstaProx[pos], obj };
+                    worker.RunWorkerAsync(options);
+                    pos++;
+                }
+                catch { break; }
+            }
         }
 
         #region BackgroundMethods
@@ -94,29 +112,48 @@ namespace Instagram_Checker.BLL
         private async void CheckInsta_DoWork(object sender, DoWorkEventArgs e)
         {
             object[] arg = (object[])e.Argument;
-            List<Dictionary<string, string>> proxyOptions = (List<Dictionary<string, string>>)arg[0];
+            List<Dictionary<string, object>> proxyOptions = (List<Dictionary<string, object>>)arg[0];
             List<Dictionary<string, string>> instOptions = (List<Dictionary<string, string>>)arg[1];
 
-            int proxyPos = (int)Math.Floor((decimal)instOptions.Count / proxyOptions.Count);
-            if (proxyPos == 0)
-                proxyPos = 1;
+            
 
+            int proxyCount = (int)Math.Floor((decimal)instOptions.Count / proxyOptions.Count);
+            if (proxyCount == 0)
+                proxyCount = 1;
+
+            int proxyPos = 0;
             for (int i = 0; i < instOptions.Count; i++)
             {
                 HttpAndroid android = new HttpAndroid();
-                var result = await android.Login(instOptions[0]["instaLogin"], instOptions[1]["instaPassword"],
-                    proxyOptions[0]["ip"], Int32.Parse(proxyOptions[proxyPos]["port"]), proxyOptions[2]["proxyLogin"], proxyOptions[3]["proxyPassword"]);
-                if (result.Info.Message == "Success")
+                IResult<InstaLoginResult> result = null;
+                try
                 {
-
+                    result = await android.Login(instOptions[i]["instaLogin"], instOptions[i]["instaPassword"],
+                        proxyOptions[proxyPos]["ip"].ToString(), Int32.Parse(proxyOptions[proxyPos]["port"].ToString()), proxyOptions[proxyPos]["proxyLogin"].ToString(), proxyOptions[proxyPos]["proxyPassword"].ToString());
                 }
-                else if (result.Info.Message == "Challenge is required")
+                catch
                 {
-
+                    result = await android.Login(instOptions[i]["instaLogin"], instOptions[i]["instaPassword"],
+                        proxyOptions[proxyPos]["ip"].ToString(), Int32.Parse(proxyOptions[proxyPos]["port"].ToString()));
+                }
+                if (result.Value.ToString() == "Success")
+                {
+                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Success! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
+                }
+                else if (result.Value.ToString() == "Challenge is required")
+                {
+                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Challenge required! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
+                }
+                else if (result.Info.Message == "Произошла ошибка при отправке запроса.")
+                {
+                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Ошибка при отправке запроса! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
+                    i--;
+                    proxyPos++;
                 }
                 else
                 {
-
+                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"{result.Value}! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
+                    Console.WriteLine("wow");
                 }
             }
         }
@@ -146,8 +183,12 @@ namespace Instagram_Checker.BLL
         private void InitObjects_DoWork(object sender, DoWorkEventArgs e)
         {
             var usrs = _account.Users;
+            var instProxy = _proxy.InstaProxies;
             int count = usrs.Count / 10000;
-            _objects = new List<object>();
+
+            _objectsInstaLogs = new List<object>();
+            _objectsInstaProx = new List<object>();
+
             int pos = 0;
             int maxPos = 10000;
             for (int i = 0; i < count; i++)
@@ -163,11 +204,38 @@ namespace Instagram_Checker.BLL
                     }
                     catch { check = true; break; }
                 }
+                if (forObj.Count > 0)
+                    _objectsInstaLogs.Add(forObj);
                 if (check)
                     break;
                 pos += 10000;
                 maxPos += 10000;
-                _objects.Add(forObj);
+            }
+
+            int countProx = instProxy.Count / _objectsInstaLogs.Count;
+            if (countProx == 0)
+                countProx = instProxy.Count;
+            pos = 0;
+            maxPos = countProx;
+            for (int i = 0; i < count; i++)
+            {
+                bool check = false;
+                List<Dictionary<string, object>> forObj = new List<Dictionary<string, object>>();
+                for (int j = pos; j < maxPos; j++)
+                {
+                    try
+                    {
+                        Dictionary<string, object> proxy = instProxy[j];
+                        forObj.Add(proxy);
+                    }
+                    catch { check = true; break; }
+                }
+                if (forObj.Count > 0)
+                    _objectsInstaProx.Add(forObj);
+                if (check)
+                    break;
+                pos += countProx;
+                maxPos += countProx;
             }
         }
 
