@@ -18,6 +18,7 @@ namespace InstagramLibrary
         public IInstaApi InstaApi
         { get { return _instaApi; } }
 
+        public UserSessionData UserSession { get; private set; }
 
         public async Task<IResult<InstaLoginResult>> Login(string username, string instPass, string ip, int port, string login = null, string password = null)
         {
@@ -45,9 +46,7 @@ namespace InstagramLibrary
                 .UseHttpClientHandler(httpHandler)
                 .Build();
 
-            //Thread.Sleep(11000);
             IResult<InstaLoginResult> res = null;
-
             for (int i = 0; i < 5; i++)
             {
                 res = await _instaApi.LoginAsync();
@@ -56,12 +55,8 @@ namespace InstagramLibrary
                 Thread.Sleep(1000);
             }
             _CsrfToken = userSession.CsrfToken;
+            UserSession = userSession;
 
-            //if (res.Info.Message == "Challenge is required")
-            //{
-            //    var resul = await _instaApi.ResetChallenge();
-            //    var verif = await _instaApi.ChooseVerifyMethod(1);
-            //}
             return res;
         }
     }

@@ -10,6 +10,8 @@ namespace Instagram_Checker.BLL
 {
     public class Model
     {
+        public object[] locker = new object[1];
+
         private Proxy _proxy;
         private Accounts _account;
         private HttpAndroid _android;
@@ -21,20 +23,21 @@ namespace Instagram_Checker.BLL
 
         private List<object> _objectsInstaLogs;
         private List<object> _objectsInstaProx;
-        object locker = new object();
 
-        public bool IsProxyInited { get; private set; }
+        public bool IsProgramComplitlyEnded { get; private set; }
         public bool IsAccountInited { get; private set; }
         public bool IsObjectsReady { get; private set; }
+        public bool NeedMoreProxy { get; private set; }
+        public bool IsProxyInited { get; private set; }
         public bool IsMailsReady { get; private set; }
-        public bool IsProgramComplitlyEnded { get; private set; }
-        public List<string> AccountInfoDataSet { get; set; }
+
+
+        public List<string> AccountInfoDataSet_Required { get; private set; }
+        public List<string> AccountInfoDataSet_Success { get; private set; }
 
         public Proxy GetProxy { get { return _proxy; } }
         public Accounts GetAccounts { get { return _account; } }
         public AccountsMail GetAccountsMail { get { return _accMails; } }
-
-
 
         public Model()
         {
@@ -43,7 +46,8 @@ namespace Instagram_Checker.BLL
             IsObjectsReady = false;
             IsMailsReady = false;
             IsProgramComplitlyEnded = false;
-            AccountInfoDataSet = new List<string>();
+            AccountInfoDataSet_Required = new List<string>();
+            AccountInfoDataSet_Success = new List<string>();
 
             _proxy = new Proxy();
             _account = new Accounts();
@@ -87,6 +91,16 @@ namespace Instagram_Checker.BLL
             worker.RunWorkerAsync();
         }
 
+        public void UpdateProxy(string key)
+        {
+            if (key != null)
+            {
+                BackgroundWorker worker = new BackgroundWorker();
+                worker.DoWork += UpdateProxy_DoWork;
+                worker.RunWorkerCompleted += UpdateProxy_RunWorkerCompleted;
+            }
+        }
+
 
         public void CheckAllAccounts()
         {
@@ -105,23 +119,25 @@ namespace Instagram_Checker.BLL
                 }
                 catch { break; }
             }
+            logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Выделено потоков: {pos + 1}", Method = "Model.CheckInsta.InitThreads" });
         }
 
         #region BackgroundMethods
-
         private async void CheckInsta_DoWork(object sender, DoWorkEventArgs e)
         {
             object[] arg = (object[])e.Argument;
             List<Dictionary<string, object>> proxyOptions = (List<Dictionary<string, object>>)arg[0];
             List<Dictionary<string, string>> instOptions = (List<Dictionary<string, string>>)arg[1];
 
-            
-
+            if (proxyOptions[0] == null || instOptions[0] == null)
+                return;
             int proxyCount = (int)Math.Floor((decimal)instOptions.Count / proxyOptions.Count);
             if (proxyCount == 0)
                 proxyCount = 1;
 
             int proxyPos = 0;
+            bool check = true;
+            int checkPos = 0;
             for (int i = 0; i < instOptions.Count; i++)
             {
                 HttpAndroid android = new HttpAndroid();
@@ -133,33 +149,60 @@ namespace Instagram_Checker.BLL
                 }
                 catch
                 {
-                    result = await android.Login(instOptions[i]["instaLogin"], instOptions[i]["instaPassword"],
-                        proxyOptions[proxyPos]["ip"].ToString(), Int32.Parse(proxyOptions[proxyPos]["port"].ToString()));
+                    try
+                    {
+                        result = await android.Login(instOptions[i]["instaLogin"], instOptions[i]["instaPassword"],
+                            proxyOptions[proxyPos]["ip"].ToString(), Int32.Parse(proxyOptions[proxyPos]["port"].ToString()));
+                    }
+                    catch (Exception ex)
+                    {
+                        if (check)
+                        {
+                            for (int z = 0; z < 60; z++)
+                            {
+                                try
+                                {
+                                    proxyOptions.Add(_proxy.InstaProxies[z]);
+                                    _proxy.InstaProxies.Remove(_proxy.InstaProxies[z]);
+                                }
+                                catch
+                                {
+                                    NeedMoreProxy = true;
+                                }
+                            }
+                            logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"{ex.Message}", Method = "Model.CheckInsta" });
+                            i--;
+                            check = false;
+                        }
+                        else
+                            check = true;
+                        continue;
+                    }
                 }
                 if (result.Value.ToString() == "Success")
                 {
-                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Success! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
+                    logging.Invoke(LogIO.path, new Log() { UserName = $"{android.UserSession.UserName}:{android.UserSession.Password}", Date = DateTime.Now, LogMessage = $"Success! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
                 }
-                else if (result.Value.ToString() == "Challenge is required")
+                else if (result.Value.ToString() == "ChallengeRequired")
                 {
-                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Challenge required! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
+                    logging.Invoke(LogIO.path, new Log() { UserName = $"{android.UserSession.UserName}:{android.UserSession.Password}", Date = DateTime.Now, LogMessage = $"Challenge required! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
                 }
                 else if (result.Info.Message == "Произошла ошибка при отправке запроса.")
                 {
                     logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Ошибка при отправке запроса! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
-                    i--;
                     proxyPos++;
+                    i--;
                 }
                 else
                 {
                     logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"{result.Value}! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
-                    Console.WriteLine("wow");
                 }
+                checkPos++;
+
+                if (checkPos % 10 == 0)
+                    proxyPos++;
             }
         }
-
-
-
 
 
 
@@ -167,7 +210,6 @@ namespace Instagram_Checker.BLL
         {
             IsMailsReady = true;
         }
-
         private void AccountsMail_DoWork(object sender, DoWorkEventArgs e)
         {
             _accMails.GetMailsFromBaseFile();
@@ -179,9 +221,10 @@ namespace Instagram_Checker.BLL
         {
             IsObjectsReady = true;
         }
-
         private void InitObjects_DoWork(object sender, DoWorkEventArgs e)
         {
+            _proxy.ResolveProxy(_accMails.CountMails);
+
             var usrs = _account.Users;
             var instProxy = _proxy.InstaProxies;
             int count = usrs.Count / 10000;
@@ -237,6 +280,20 @@ namespace Instagram_Checker.BLL
                 pos += countProx;
                 maxPos += countProx;
             }
+
+            _proxy.ClearInsta();
+        }
+
+
+        private void UpdateProxy_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            NeedMoreProxy = false;
+        }
+        private void UpdateProxy_DoWork(object sender, DoWorkEventArgs e)
+        {
+            string key = (string)e.Argument;
+            _proxy.GetProxy(key);
+            _proxy.ResolveProxy(_accMails.CountMails);
         }
 
 
@@ -245,7 +302,6 @@ namespace Instagram_Checker.BLL
             logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy inited! {_proxy.CountProxy} proxies are ready", Method = "Model.InitProxy" });
             IsProxyInited = true;
         }
-
         private void Worker_InitProxy(object sender, DoWorkEventArgs e)
         {
             object[] opts = (object[])e.Argument;
@@ -266,13 +322,11 @@ namespace Instagram_Checker.BLL
                     break;
             }
         }
-
         private void Worker_InitAccountsCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Accounts inited! {_account.CountUsers} accounts are ready", Method = "Model.InitAccounts" });
             IsAccountInited = true;
         }
-
         #endregion
     }
 }

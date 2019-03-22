@@ -59,8 +59,8 @@ namespace FileLibrary
 
                         for (int i = 0; i < result.Count / 2; i++)
                         {
-                            if (result[i].http != "1" && result[i].https != "1")
-                                continue;
+                            //if (result[i].http != "1" && result[i].https != "1")
+                            //    continue;
                             Dictionary<string, object> prxInst = new Dictionary<string, object>();
                             prxInst.Add("ip", result[i].real_ip);
                             prxInst.Add("port", Int32.Parse(result[i].port));
@@ -169,7 +169,6 @@ namespace FileLibrary
             return true;
         }
         
-
         public void GetAllInfoFromFile()
         {
             string path = @"\base\Proxy\";
@@ -219,6 +218,20 @@ namespace FileLibrary
                     logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $@"file \base\{fileName[fileName.Count() - 1]} returned {count} proxies", Method = "Proxy.GetBase" });
                 }
             }
+        }
+
+        public void ResolveProxy(int count)
+        {
+            while (_mail_proxies.Count > count)
+            {
+                _insta_proxies.Add(_mail_proxies[0]);
+                _mail_proxies.Remove(_mail_proxies[0]);
+            }
+        }
+
+        public void ClearInsta()
+        {
+            _insta_proxies.Clear();
         }
 
         #region PROPS

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -26,15 +27,21 @@ namespace Instagram_Checker
     public partial class MainWindow : Window
     {
         private Model _model;
+        private ProxyOptionWindow _proxyWindow;
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
-
 
         public MainWindow()
         {
-            InitializeComponent();
+            InitializeComponent();        
             _model = new Model();
             logging += ShowLog;
         }
+
+        private void ShowLog(string tmp, Log log)
+        {
+            this.Dispatcher.Invoke(() => tbLog.Text = tbLog.Text + log + '\n');
+        }
+
 
         private void btnLoad_Click(object sender, RoutedEventArgs e)
         {
@@ -49,14 +56,51 @@ namespace Instagram_Checker
             worker.RunWorkerAsync();
         }
 
+        private void btnStart_Click(object sender, RoutedEventArgs e)
+        {
+            btnStart.IsEnabled = false;
+            
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += Start_DoWork;
+            worker.RunWorkerCompleted += Start_RunWorkerCompleted;
+            worker.RunWorkerAsync(tbProxyKey.Text);
+        }
+
+
+        private void Start_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            MessageBox.Show("Програма успешно завершила свою работу");
+            btnLoad.IsEnabled = true;
+        }
+        private void Start_DoWork(object sender, DoWorkEventArgs e)
+        {
+            string key = (string)e.Argument;
+            _model.CheckAllAccounts();
+            DateTime time = DateTime.Now;
+
+            while (!_model.IsProgramComplitlyEnded)
+            {
+                Thread.Sleep(10000);
+                if (DateTime.Now.Minute - time.Minute > 5 || _model.NeedMoreProxy == true)
+                {
+                    _model.UpdateProxy(key);
+                    logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Update proxy... updated = {_model.GetProxy.CountProxy}", UserName = null });
+                    time = DateTime.Now;
+                }
+                else if (DateTime.Now.Hour > time.Hour)
+                {
+                    time = DateTime.Now;
+                }
+            }
+        }
+
         private void Load_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             btnStart.IsEnabled = true;
         }
-
         private void Load_DoWork(object sender, DoWorkEventArgs e)
         {
-            
+
             _model.InitAccounts();
             _model.InitAccountsMail();
 
@@ -86,14 +130,14 @@ namespace Instagram_Checker
                     countMail++;
                 }
             }
-            
+
             if (countPrx == 0)
                 logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Proxy are ready ({_model.GetProxy.CountProxy})", UserName = null });
             else if (countAcc == 0)
                 logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready ({_model.GetAccounts.CountUsers})", UserName = null });
             else if (countMail == 0)
                 logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
-
+            
 
             _model.InitObjects();
             while (!_model.IsObjectsReady) { }
@@ -101,32 +145,10 @@ namespace Instagram_Checker
 
         }
 
-        private void ShowLog(string tmp, Log log)
+        private void btnProxyOptions_Click(object sender, RoutedEventArgs e)
         {
-            this.Dispatcher.Invoke(() => tbLog.Text = tbLog.Text + log + '\n');
-        }
-
-        private void btnStart_Click(object sender, RoutedEventArgs e)
-        {
-            btnStart.IsEnabled = false;
-            _model.CheckAllAccounts();
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += Start_DoWork;
-            worker.RunWorkerCompleted += Start_RunWorkerCompleted;
-        }
-
-        private void Start_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            MessageBox.Show("Програма успешно завершила свою работу");
-            btnLoad.IsEnabled = true;
-        }
-
-        private void Start_DoWork(object sender, DoWorkEventArgs e)
-        {
-            while(_model.IsProgramComplitlyEnded)
-            {
-
-            }
+            _proxyWindow = new ProxyOptionWindow();
+            _proxyWindow.Show();
         }
     }
 }
