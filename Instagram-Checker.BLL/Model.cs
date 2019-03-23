@@ -5,6 +5,7 @@ using InstaSharper.Classes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
 
 namespace Instagram_Checker.BLL
 {
@@ -27,11 +28,11 @@ namespace Instagram_Checker.BLL
         public bool IsProgramComplitlyEnded { get; private set; }
         public bool IsAccountInited { get; private set; }
         public bool IsObjectsReady { get; private set; }
-        public bool NeedMoreProxy { get; private set; }
         public bool IsProxyInited { get; private set; }
         public bool IsMailsReady { get; private set; }
 
-
+        public bool NeedMoreProxy { get; set; }
+        
         public List<string> AccountInfoDataSet_Required { get; private set; }
         public List<string> AccountInfoDataSet_Success { get; private set; }
 
@@ -181,11 +182,27 @@ namespace Instagram_Checker.BLL
                 }
                 if (result.Value.ToString() == "Success")
                 {
-                    logging.Invoke(LogIO.path, new Log() { UserName = $"{android.UserSession.UserName}:{android.UserSession.Password}", Date = DateTime.Now, LogMessage = $"Success! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
+                    if (result.Succeeded == true)
+                    {
+                        lock (locker)
+                        {
+                            AccountInfoDataSet_Success.Add(android.UserSession.UserName + ":" + android.UserSession.Password + ":" + "empty" + ":" + "empty");
+                        }
+                    }
+                    if (result.Info.Message == "Please wait a few minutes before you try again.")
+                    {
+                        Thread.Sleep(30000);
+                        i--;
+                    }
+                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Success! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
                 }
                 else if (result.Value.ToString() == "ChallengeRequired")
                 {
-                    logging.Invoke(LogIO.path, new Log() { UserName = $"{android.UserSession.UserName}:{android.UserSession.Password}", Date = DateTime.Now, LogMessage = $"Challenge required! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
+                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Challenge required! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
+                    lock (locker)
+                    {
+                        AccountInfoDataSet_Required.Add(android.UserSession.UserName + ":" + android.UserSession.Password);
+                    }
                 }
                 else if (result.Info.Message == "Произошла ошибка при отправке запроса.")
                 {

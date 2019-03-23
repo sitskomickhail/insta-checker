@@ -3,6 +3,7 @@ using Instagram_Checker.BLL;
 using InstaLog;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -28,13 +29,17 @@ namespace Instagram_Checker
     {
         private Model _model;
         private ProxyOptionWindow _proxyWindow;
+        ObservableCollection<ShowCollection> _grid;
+        private Color _color;
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
 
         public MainWindow()
         {
-            InitializeComponent();        
+            InitializeComponent();
             _model = new Model();
             logging += ShowLog;
+            _grid = new ObservableCollection<ShowCollection>();
+            dgAccounts.ItemsSource = _grid;
         }
 
         private void ShowLog(string tmp, Log log)
@@ -59,13 +64,64 @@ namespace Instagram_Checker
         private void btnStart_Click(object sender, RoutedEventArgs e)
         {
             btnStart.IsEnabled = false;
-            
+
             BackgroundWorker worker = new BackgroundWorker();
             worker.DoWork += Start_DoWork;
             worker.RunWorkerCompleted += Start_RunWorkerCompleted;
             worker.RunWorkerAsync(tbProxyKey.Text);
+
+            BackgroundWorker gridWorker = new BackgroundWorker();
+            gridWorker.DoWork += GridWorker_DoWork;
+            gridWorker.RunWorkerAsync();
         }
 
+        private void dgAccounts_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+            DataGridRow item = e.Row as DataGridRow;
+            var col = e.Row.Item as ShowCollection;
+            if (item != null && col != null)
+            {
+                item.Background = new SolidColorBrush(_color);
+            }
+            else
+                item.Background = new SolidColorBrush(Colors.White);
+        }
+
+        private void GridWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            int pos = 1;
+            while (!_model.IsProgramComplitlyEnded)
+            {
+                lock (_model.locker)
+                {
+                    if (_model.AccountInfoDataSet_Required.Count > 0)
+                    {
+                        string[] str = _model.AccountInfoDataSet_Required[0].Split(':');
+                        _model.AccountInfoDataSet_Required.Remove(_model.AccountInfoDataSet_Required[0]);
+                        _color = Colors.LightBlue;
+                        Dispatcher.Invoke(() =>
+                        {
+                            _grid.Add(new ShowCollection() { ID = $"{pos}", Login = str[0], Password = str[1], Status = "Ожидается подтверждение" });
+                            dgAccounts.ItemsSource = _grid;                           
+                        });
+                        pos++;
+                    }
+                    if (_model.AccountInfoDataSet_Success.Count > 0)
+                    {
+                        string[] str = _model.AccountInfoDataSet_Success[0].Split(':');
+                        _model.AccountInfoDataSet_Success.Remove(_model.AccountInfoDataSet_Success[0]);
+                        _color = Colors.LightGreen;
+                        Dispatcher.Invoke(() =>
+                        {
+                            _grid.Add(new ShowCollection() { ID = $"{pos}", Login = str[0], Password = str[1], Status = "Успешно", Email = str[2], EmailPassword = str[3] });
+                            dgAccounts.ItemsSource = _grid;
+                        });
+                        pos++;
+                    }
+                }
+                Thread.Sleep(100);
+            }
+        }
 
         private void Start_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
@@ -86,6 +142,7 @@ namespace Instagram_Checker
                     _model.UpdateProxy(key);
                     logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Update proxy... updated = {_model.GetProxy.CountProxy}", UserName = null });
                     time = DateTime.Now;
+                    _model.NeedMoreProxy = false;
                 }
                 else if (DateTime.Now.Hour > time.Hour)
                 {
@@ -100,7 +157,6 @@ namespace Instagram_Checker
         }
         private void Load_DoWork(object sender, DoWorkEventArgs e)
         {
-
             _model.InitAccounts();
             _model.InitAccountsMail();
 
@@ -137,7 +193,7 @@ namespace Instagram_Checker
                 logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready ({_model.GetAccounts.CountUsers})", UserName = null });
             else if (countMail == 0)
                 logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
-            
+
 
             _model.InitObjects();
             while (!_model.IsObjectsReady) { }
