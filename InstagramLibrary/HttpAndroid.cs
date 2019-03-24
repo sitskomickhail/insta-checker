@@ -20,7 +20,7 @@ namespace InstagramLibrary
 
         public UserSessionData UserSession { get; private set; }
 
-        public async Task<IResult<InstaLoginResult>> Login(string username, string instPass, string ip, int port, string login = null, string password = null)
+        public async Task<IResult<InstaLoginResult>> Login(int delay, string username, string instPass, string ip, int port, string login = null, string password = null)
         {
             var userSession = new UserSessionData
             {
@@ -37,27 +37,30 @@ namespace InstagramLibrary
             
 
             httpHandler.Proxy = wp;
-            var delay = RequestDelay.FromSeconds(11, 11);
+            var requestDelay = RequestDelay.FromSeconds(delay, delay);
 
             _instaApi = InstaApiBuilder.CreateBuilder()
                 .SetUser(userSession)
                 .UseLogger(new DebugLogger(LogLevel.Exceptions))
-                .SetRequestDelay(delay)
+                .SetRequestDelay(requestDelay)
                 .UseHttpClientHandler(httpHandler)
                 .Build();
 
             IResult<InstaLoginResult> res = null;
+                requestDelay.Disable();
             for (int i = 0; i < 5; i++)
             {
                 res = await _instaApi.LoginAsync();
-                if (res.Info.Message != "Произошла ошибка при отправке запроса.")
+                if (res.Info.Message != "Произошла ошибка при отправке запроса." && res.Info.Message != "An error occurred while sending the request.")
                     break;
-                Thread.Sleep(1000);
+                Thread.Sleep(2000);                
             }
+            requestDelay.Enable();
+
             _CsrfToken = userSession.CsrfToken;
             UserSession = userSession;
-
             return res;
         }
+        
     }
 }

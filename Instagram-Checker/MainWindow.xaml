@@ -3,9 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Instagram_Checker"
+        xmlns:local="clr-namespace:Instagram_Checker"        
+        xmlns:Numeric="clr-namespace:Instagram_Checker"
         mc:Ignorable="d"
-        Title="Instagram-Checker" Height="650" Width="755">
+        Title="Instagram-Checker" Height="670" Width="800">
+    <Window.Resources>
+        <Numeric:Numeric_UpDown x:Key="NumericUpDown"/>
+    </Window.Resources>
     <Grid Margin="5">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="0.45*"/>
@@ -26,8 +30,8 @@
         </Border>
         <GroupBox Grid.Column="1" Header="Настройки">
             <StackPanel>
-                <CheckBox IsEnabled="True" Content="Использовать ApiProxy" FontSize="11" Margin="5, 5, 0, 0"
-                          x:Name="cbApiProxy"/>
+                <CheckBox IsEnabled="True" Content="Использовать Best-Proxies" FontSize="11" Margin="5, 5, 0, 0"
+                          x:Name="cbApiProxy" IsChecked="True"/>
                 <TextBox x:Name="tbProxyKey"
                          IsEnabled="{Binding ElementName=cbApiProxy, Path=IsChecked}"
                          Margin="5"/>
@@ -35,6 +39,87 @@
                         x:Name="btnProxyOptions"
                         Click="btnProxyOptions_Click"
                         Margin="5"/>
+                <GroupBox Header="Настройки работы" Margin="5">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Numeric:Numeric_UpDown x:Name="numcThreads" Margin="5"
+                                                Value="500"/>
+                        <Label Grid.Column="1" Padding="18, 5, 0, 0">
+                            <TextBlock TextWrapping="Wrap" Text="Количество потоков" FontSize="10"
+                                       Padding="2"></TextBlock>
+                        </Label>
+                        <Numeric:Numeric_UpDown x:Name="numcDelay" Margin="5" Grid.Row="1"/>
+                        <Label Grid.Column="1" Grid.Row="2" Padding="13, 10, 0, 0">
+                            <TextBlock TextWrapping="Wrap" Text="Задержка Mail" FontSize="10"
+                                       Padding="2"></TextBlock>
+                        </Label>
+
+                        <Numeric:Numeric_UpDown x:Name="numcDelayMail" Margin="5" Grid.Row="2"
+                                                Value="0" IsEnabled="False"/>
+                        <Label Grid.Column="1" Grid.Row="1" Padding="23, 10, 0, 0">
+                            <TextBlock TextWrapping="Wrap" Text="Задержка" FontSize="10"
+                                       Padding="2"></TextBlock>
+                        </Label>
+
+                        <Numeric:Numeric_UpDown x:Name="numcAccsInThread" Margin="5" Grid.Row="3"
+                                                Value="4500"/>
+                        <Label Grid.Column="1" Grid.Row="3" Padding="17, 5, 0, 0">
+                            <TextBlock TextWrapping="Wrap" Text="Аккаунтов в потоке" FontSize="10"
+                                       Padding="2"></TextBlock>
+                        </Label>
+                    </Grid>
+                </GroupBox>
+                <GroupBox Header="Результат работы" Margin="5">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.9*"/>
+                            <ColumnDefinition Width="0.1*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Label Foreground="Green">Успешно</Label>
+                        <Label x:Name="lbSuccess"
+                               Grid.Column="1"
+                               Foreground="Green">0</Label>
+
+                        <Label Grid.Row="1"
+                               Foreground="Blue">Ожидают подтверждения</Label>
+                        <Label x:Name="lbChallenge" Grid.Column="1"
+                               Grid.Row="1"
+                               Foreground="Blue">0</Label>
+
+                        <Label Grid.Row="2"
+                               Foreground="Red">Заблокировано аккаунтов</Label>
+                        <Label x:Name="lbBlockedAccs" Grid.Column="1"
+                               Grid.Row="2"
+                               Foreground="Red">0</Label>
+
+                        <Label Grid.Row="3"
+                               Foreground="Red">Заблокировано прокси</Label>
+                        <Label x:Name="lbBlockedProxy"
+                               Grid.Column="1"
+                               Grid.Row="3"
+                               Foreground="Red">0</Label>
+
+                        <Label Grid.Row="4" Margin="0, 10, 0, 0">Всего просмотрено аккаунтов</Label>
+                        <Label x:Name="lbAllAccountsSwitched" Grid.Column="1" Grid.Row="4"
+                                Margin="0, 10, 0, 0">0</Label>
+                    </Grid>
+                </GroupBox>
             </StackPanel>
         </GroupBox>
         <Grid Grid.Column="1" Grid.Row="1">
@@ -42,6 +127,28 @@
                 <RowDefinition Height="0.5*"/>
                 <RowDefinition Height="0.5*"/>
             </Grid.RowDefinitions>
+            <Grid Margin="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="0.75*"/>
+                    <ColumnDefinition Width="0.25*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                    <!--<RowDefinition Height="*"/>-->
+                </Grid.RowDefinitions>
+                <Label>Потоков в работе:</Label>
+                <Label Grid.Column="1" x:Name="lbThreadsInWork"
+                       Padding="24, 4, 0, 0">0</Label>
+
+                <Label Grid.Row="1">Прокси использовано:</Label>
+                <Label Grid.Row="1" Grid.Column="1" x:Name="lbProxyUsed"
+                       Padding="24, 4, 0, 0">0</Label>
+
+                <!--<Label Grid.Row="2">Время работы:</Label>
+                <Label Grid.Row="2" Grid.Column="1"
+                       x:Name="lbWorkingTime">00:00:00</Label>-->
+            </Grid>
             <StackPanel Grid.Column="1" Grid.Row="1">
                 <Button x:Name="btnLoad"
                     Content="Загрузить данные"

@@ -3,6 +3,7 @@ using Instagram_Checker.BLL;
 using InstaLog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -33,6 +34,7 @@ namespace Instagram_Checker
         private Color _color;
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
 
+
         public MainWindow()
         {
             InitializeComponent();
@@ -50,29 +52,96 @@ namespace Instagram_Checker
 
         private void btnLoad_Click(object sender, RoutedEventArgs e)
         {
-            btnLoad.IsEnabled = false;
-            logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Start check info", UserName = null });
+            int threadsCount = numcThreads.Value;
+            int splitCount = numcAccsInThread.Value;
 
-            _model.InitProxy((bool)cbApiProxy.IsChecked ? true : false, tbProxyKey.Text);
+            if (threadsCount > 0 && splitCount > 0)
+            {
 
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += Load_DoWork;
-            worker.RunWorkerCompleted += Load_RunWorkerCompleted;
-            worker.RunWorkerAsync();
+
+                BackgroundWorker controlWorker = new BackgroundWorker();
+                controlWorker.DoWork += ControlWorker_DoWork;
+                controlWorker.RunWorkerAsync();
+
+                btnLoad.IsEnabled = false;
+                logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Start check info", UserName = null });
+
+                _model.InitProxy((bool)cbApiProxy.IsChecked ? true : false, tbProxyKey.Text);
+
+                int[] obj = new int[2] { threadsCount, splitCount };
+
+                BackgroundWorker worker = new BackgroundWorker();
+                worker.DoWork += Load_DoWork;
+                worker.RunWorkerCompleted += Load_RunWorkerCompleted;
+                worker.RunWorkerAsync(obj);
+            }
+            else
+                MessageBox.Show("Количество потоков или аккаунтов \nв потоке не может быть меньше 1", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private void btnStart_Click(object sender, RoutedEventArgs e)
         {
-            btnStart.IsEnabled = false;
+            if (numcDelay.Value > 0)
+            {
+                if (numcDelay.Value < 6)
+                {
+                    MessageBoxResult res = MessageBox.Show("Маленькая задержка может привести к некорректной\nотправке запросов. Вы действительно хотите продолжить?", "Внимание",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question);
 
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += Start_DoWork;
-            worker.RunWorkerCompleted += Start_RunWorkerCompleted;
-            worker.RunWorkerAsync(tbProxyKey.Text);
+                    if (res == MessageBoxResult.No)
+                        return;
+                }
 
-            BackgroundWorker gridWorker = new BackgroundWorker();
-            gridWorker.DoWork += GridWorker_DoWork;
-            gridWorker.RunWorkerAsync();
+                btnStart.IsEnabled = false;
+
+                object[] objs = new object[2] { tbProxyKey.Text, numcDelay.Value };
+
+                BackgroundWorker worker = new BackgroundWorker();
+                worker.DoWork += Start_DoWork;
+                worker.RunWorkerCompleted += Start_RunWorkerCompleted;
+                worker.RunWorkerAsync(objs);
+
+                BackgroundWorker gridWorker = new BackgroundWorker();
+                gridWorker.DoWork += GridWorker_DoWork;
+                gridWorker.RunWorkerAsync();
+
+                BackgroundWorker controlWorker = new BackgroundWorker();
+                controlWorker.DoWork += ControlWorker_DoWork;
+                controlWorker.RunWorkerAsync();
+            }
+            else
+                MessageBox.Show("Задержка не может быть отрицательным числом\nПожалуйста измените её значение", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        private void ControlWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while (!_model.IsProgramComplitlyEnded)
+            {
+                Dispatcher.Invoke(() => 
+                {
+                    lbThreadsInWork.Content = Process.GetCurrentProcess().Threads.Count.ToString();
+                });
+                Thread.Sleep(1000);
+                Dispatcher.Invoke(() =>
+                {
+                    lbAllAccountsSwitched.Content = _model.AccsSwitched.ToString();
+                });
+                Thread.Sleep(1000);
+                Dispatcher.Invoke(() =>
+                {
+                    lbProxyUsed.Content = _model.ProxySwitched.ToString();
+                });
+                Thread.Sleep(500);
+                Dispatcher.Invoke(() =>
+                {
+                    lbBlockedProxy.Content = _model.ProxyBlocked.ToString();
+                });
+                Thread.Sleep(500);
+                Dispatcher.Invoke(() =>
+                {
+                    lbBlockedAccs.Content = _model.AccsBlocked.ToString();
+                });
+            }
         }
 
         private void dgAccounts_LoadingRow(object sender, DataGridRowEventArgs e)
@@ -90,8 +159,18 @@ namespace Instagram_Checker
         private void GridWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             int pos = 1;
+
+            int countChallenge = 0;
+            int countSuccess = 0;
+            DateTime time = DateTime.Now;
             while (!_model.IsProgramComplitlyEnded)
             {
+                if (DateTime.Now.Minute - time.Minute >= 5)
+                {
+                    logging.Invoke("EasyLog.log", new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Update proxy... updated = {_model.GetProxy.CountProxy}", UserName = null });
+
+                }
+
                 lock (_model.locker)
                 {
                     if (_model.AccountInfoDataSet_Required.Count > 0)
@@ -102,7 +181,9 @@ namespace Instagram_Checker
                         Dispatcher.Invoke(() =>
                         {
                             _grid.Add(new ShowCollection() { ID = $"{pos}", Login = str[0], Password = str[1], Status = "Ожидается подтверждение" });
-                            dgAccounts.ItemsSource = _grid;                           
+                            dgAccounts.ItemsSource = _grid;
+                            countChallenge++;
+                            lbChallenge.Content = countChallenge.ToString();
                         });
                         pos++;
                     }
@@ -115,6 +196,8 @@ namespace Instagram_Checker
                         {
                             _grid.Add(new ShowCollection() { ID = $"{pos}", Login = str[0], Password = str[1], Status = "Успешно", Email = str[2], EmailPassword = str[3] });
                             dgAccounts.ItemsSource = _grid;
+                            countSuccess++;
+                            lbSuccess.Content = countSuccess.ToString();
                         });
                         pos++;
                     }
@@ -130,8 +213,12 @@ namespace Instagram_Checker
         }
         private void Start_DoWork(object sender, DoWorkEventArgs e)
         {
-            string key = (string)e.Argument;
-            _model.CheckAllAccounts();
+            object[] objs = (object[])e.Argument;
+
+            string key = objs[0].ToString();
+            int delay = (int)objs[1];
+
+            _model.CheckAllAccounts(delay);
             DateTime time = DateTime.Now;
 
             while (!_model.IsProgramComplitlyEnded)
@@ -157,6 +244,9 @@ namespace Instagram_Checker
         }
         private void Load_DoWork(object sender, DoWorkEventArgs e)
         {
+            int threadsCount = ((int[])e.Argument)[0];
+            int splitCount = ((int[])e.Argument)[1];
+
             _model.InitAccounts();
             _model.InitAccountsMail();
 
@@ -165,9 +255,6 @@ namespace Instagram_Checker
             int countAcc = 0;
             while (true)
             {
-                if (_model.IsAccountInited && _model.IsProxyInited && _model.IsMailsReady)
-                    break;
-
                 if (_model.IsAccountInited && countAcc == 0)
                 {
                     logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready ({_model.GetAccounts.CountUsers})", UserName = null });
@@ -185,6 +272,9 @@ namespace Instagram_Checker
                     logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
                     countMail++;
                 }
+
+                if (_model.IsAccountInited && _model.IsProxyInited && _model.IsMailsReady && countMail == 1 && countPrx == 1 && countAcc == 1)
+                    break;
             }
 
             if (countPrx == 0)
@@ -195,7 +285,9 @@ namespace Instagram_Checker
                 logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
 
 
-            _model.InitObjects();
+            _model.InitObjects(threadsCount, splitCount);
+            logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Определяем точное количество потоков...", UserName = null });
+
             while (!_model.IsObjectsReady) { }
             logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Objects are resolved", UserName = null });
 

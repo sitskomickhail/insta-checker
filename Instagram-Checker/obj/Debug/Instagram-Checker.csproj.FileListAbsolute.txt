@@ -26,3 +26,6 @@ E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\InstaLog.pdb
 E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\InstaSharper.dll
 E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\ProxyOptionWindow.g.cs
 E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\ProxyOptionWindow.baml
+E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\Numeric_UpDown.g.cs
+E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\GeneratedInternalTypeHelper.g.cs
+E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\Numeric_UpDown.baml

