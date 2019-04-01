@@ -17,17 +17,28 @@ namespace FileLibrary
         private int _filesCount;
         private int _currentPosition;
 
+        public object[] locker = new object[1];
+
+        #region PROPS
         public bool UsersReady { get; private set; }
-
         public int CountUsers { get { return _users.Count(); } }
+        public List<Dictionary<string, string>> Users { get { lock (locker) { return _users; } } }
 
-        public List<Dictionary<string, string>> Users { get { return _users; } }
+        public List<string> UsersForDeleting { get; private set; }
+        private List<Dictionary<string, string>> _userAndHisFile;
+
+
+        #endregion
 
         public Accounts()
         {
             UsersReady = false;
+            UsersForDeleting = new List<string>();
+            _userAndHisFile = new List<Dictionary<string, string>>();
             _users = new List<Dictionary<string, string>>();
         }
+
+
 
         public void GetAccountsFromBaseFile()
         {
@@ -44,6 +55,29 @@ namespace FileLibrary
             }
         }
 
+
+        public void DeleteAccountsFromFile()
+        {
+            lock (locker)
+            {
+                foreach (var account in UsersForDeleting)
+                {
+                    for (int i = 0; i < _userAndHisFile.Count; i++)
+                    {
+                        if (_userAndHisFile[i]["user"] == account)
+                        {
+                            string path = _userAndHisFile[i]["fileName"];
+
+                            var file = new List<string>(System.IO.File.ReadAllLines(path));
+                            file.Remove(account);
+                            File.WriteAllLines(path, file.ToArray());
+                        }
+                    }
+                }
+            }
+        }
+
+
         private void SetUser(object state)
         {
             string filePath = (string)state;
@@ -51,6 +85,10 @@ namespace FileLibrary
 
             foreach (string user in str)
             {
+                Dictionary<string, string> saveUser = new Dictionary<string, string>();
+                saveUser["fileName"] = filePath;
+                saveUser["user"] = user;
+                _userAndHisFile.Add(saveUser);
                 try
                 {
                     string[] splitted = user.Split(':');
@@ -67,7 +105,7 @@ namespace FileLibrary
                 UsersReady = true;
 
             string[] fileName = filePath.Split('\\');
-            logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"file {fileName[fileName.Count() - 1]} returned {str.Count()} accounts", Method = "Account.SetUser" });
+            logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"file {fileName[fileName.Count() - 1]} returned {str.Count()} accounts", Method = "Account.SetUser" });
         }
     }
 }

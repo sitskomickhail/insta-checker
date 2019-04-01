@@ -23,9 +23,13 @@ E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\Newtonsoft.Json.pdb
 E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\Newtonsoft.Json.xml
 E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\InstaLog.dll
 E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\InstaLog.pdb
-E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\InstaSharper.dll
 E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\ProxyOptionWindow.g.cs
 E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\ProxyOptionWindow.baml
 E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\Numeric_UpDown.g.cs
 E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\GeneratedInternalTypeHelper.g.cs
 E:\Projects\Instagram-Checker\Instagram-Checker\obj\Debug\Numeric_UpDown.baml
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\AE.Net.Mail.dll
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\HtmlAgilityPack.dll
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\AE.Net.Mail.pdb
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\HtmlAgilityPack.pdb
+E:\Projects\Instagram-Checker\Instagram-Checker\bin\Debug\HtmlAgilityPack.xml

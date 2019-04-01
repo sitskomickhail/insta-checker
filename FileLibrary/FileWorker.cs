@@ -10,10 +10,12 @@ namespace FileLibrary
     public class FileWorker
     {
         private const string _goodValid = @"\Result\Good_valid.txt";
-        private const string _badValid = @"\Result\Bad_pass.txt";
+        private const string _badValid = @"\Result\Bad_valid.txt";
         private const string _checkpoint = @"\Result\Checkpoint.txt";
         private const string _addphone = @"\Result\Add_phone.txt";
         private const string _badmail = @"\Result\Bad_mail.txt";
+
+        public object[] locker = new object[1];
 
         public FileWorker()
         {
@@ -23,8 +25,6 @@ namespace FileLibrary
                     File.Create(Environment.CurrentDirectory + _goodValid);
                 if (!File.Exists(Environment.CurrentDirectory + _goodValid))
                     File.Create(Environment.CurrentDirectory + _badValid);
-                if (!File.Exists(Environment.CurrentDirectory + _badValid))
-                    File.Create(Environment.CurrentDirectory + _badValid);
                 if (!File.Exists(Environment.CurrentDirectory + _checkpoint))
                     File.Create(Environment.CurrentDirectory + _checkpoint);
                 if (!File.Exists(Environment.CurrentDirectory + _addphone))
@@ -33,12 +33,39 @@ namespace FileLibrary
                     File.Create(Environment.CurrentDirectory + _badmail);
             }
             else
+            {
                 Directory.CreateDirectory("Result");
+                File.Create(Environment.CurrentDirectory + _goodValid);
+                File.Create(Environment.CurrentDirectory + _badValid);
+                File.Create(Environment.CurrentDirectory + _checkpoint);
+                File.Create(Environment.CurrentDirectory + _addphone);
+                File.Create(Environment.CurrentDirectory + _badmail);
+            }
         }
 
         public void GoodValid(string account)
         {
+            lock (locker) { File.AppendAllText(_goodValid, account + "\n"); }
+        }
 
+        public void BadValid(string account)
+        {
+            lock (locker) { File.AppendAllText(_badValid, account + "\n"); }
+        }
+
+        public void Checkpoint(string account)
+        {
+            lock (locker) { File.AppendAllText(_checkpoint, account + "\n"); }
+        }
+
+        public void AddPhone(string account)
+        {
+            lock (locker) { File.AppendAllText(_addphone, account + "\n"); }
+        }
+
+        public void BadMail(string account)
+        {
+            lock (locker) { File.AppendAllText(_badmail, account + "\n"); }
         }
     }
 }

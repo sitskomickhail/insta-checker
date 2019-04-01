@@ -30,10 +30,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="InstaSharper, Version=1.4.82.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\InstaSharper.1.4.82\lib\net452\InstaSharper.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
@@ -51,11 +47,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HttpAndroid.cs" />
+    <Compile Include="HttpRequestBuilder.cs" />
+    <Compile Include="Model\LoginResult.cs" />
+    <Compile Include="Model\ProfileResult.cs" />
+    <Compile Include="Model\RootobjectChallenge.cs" />
+    <Compile Include="Model\UpdateProfileResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\InstaLog\InstaLog.csproj">
+      <Project>{ab50291f-44d8-4e51-9247-ea6b739b6938}</Project>
+      <Name>InstaLog</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

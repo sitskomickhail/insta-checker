@@ -17,6 +17,8 @@ namespace FileLibrary
         private List<Dictionary<string, object>> _mail_proxies;
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
 
+        public object[] locker = new object[1];
+
         private List<Thread> _threads;
 
         private const string _instaProxyPath = "Proxy_Insta.txt";
@@ -35,7 +37,7 @@ namespace FileLibrary
         {
             if (String.IsNullOrWhiteSpace(key))
             {
-                logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy key doesn't exist", Method = "Proxy.JSonProxy" });
+                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy key doesn't exist", Method = "Proxy.JSonProxy" });
                 return false;
             }
 
@@ -56,8 +58,8 @@ namespace FileLibrary
                         var contributorsAsJson = sr.ReadToEnd();
                         var result = JsonConvert.DeserializeObject<List<ApiProxy>>(contributorsAsJson);
 
-
-                        for (int i = 0; i < result.Count / 2; i++)
+                        int position = result.Count / 2;
+                        for (int i = 0; i < position; i++)
                         {
                             //if (result[i].http != "1" && result[i].https != "1")
                             //    continue;
@@ -70,22 +72,20 @@ namespace FileLibrary
                             try
                             {
                                 Dictionary<string, object> prxMail = new Dictionary<string, object>();
-                                prxMail.Add("ip", result[i].real_ip);
-                                prxMail.Add("port", Int32.Parse(result[i].port));
+                                prxMail.Add("ip", result[i + position].real_ip);
+                                prxMail.Add("port", Int32.Parse(result[i + position].port));
 
                                 _mail_proxies.Add(prxMail);
                             }
                             catch { }
                         }
-                        logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Api returned {result.Count} proxy accounts", Method = "Proxy.JSonProxy" });
-                        s.Close();
-                        sr.Close();
+                        logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Api returned {result.Count} proxy accounts", Method = "Proxy.JSonProxy" });
                     }
                 }
             }
             catch (Exception e)
             {
-                logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = e.Message, Method = "Proxy.JSonProxy" });
+                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = e.Message, Method = "Proxy.JSonProxy" });
                 return false;
             }
             return true;
@@ -120,11 +120,11 @@ namespace FileLibrary
                     }
                     catch { }
                 }
-                logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Insta.txt returned {count} proxies", Method = "Proxy.InstaProxy_Init" });
+                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Insta.txt returned {count} proxies", Method = "Proxy.InstaProxy_Init" });
             }
             else
             {
-                logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Insta.txt doesn't exist", Method = "Proxy.InstaProxy_Init" });
+                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Insta.txt doesn't exist", Method = "Proxy.InstaProxy_Init" });
                 return false;
             }
             return true;
@@ -159,16 +159,16 @@ namespace FileLibrary
                     }
                     catch { }
                 }
-                logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Mail.txt returned {count} proxies", Method = "Proxy.MailProxy_Init" });
+                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Mail.txt returned {count} proxies", Method = "Proxy.MailProxy_Init" });
             }
             else
             {
-                logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Mail.txt doesn't exist", Method = "Proxy.MailProxy_Init" });
+                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Mail.txt doesn't exist", Method = "Proxy.MailProxy_Init" });
                 return false;
             }
             return true;
         }
-        
+
         public void GetAllInfoFromFile()
         {
             string path = @"\base\Proxy\";
@@ -215,7 +215,7 @@ namespace FileLibrary
                         catch { }
                     }
                     string[] fileName = file.Split('\\');
-                    logging.Invoke(LogIO.path, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $@"file \base\{fileName[fileName.Count() - 1]} returned {count} proxies", Method = "Proxy.GetBase" });
+                    logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $@"file \base\{fileName[fileName.Count() - 1]} returned {count} proxies", Method = "Proxy.GetBase" });
                 }
             }
         }
@@ -235,8 +235,8 @@ namespace FileLibrary
         }
 
         #region PROPS
-        public List<Dictionary<string, object>> InstaProxies { get { return _insta_proxies; } }
-        public List<Dictionary<string, object>> MailProxies { get { return _mail_proxies; } }
+        public List<Dictionary<string, object>> InstaProxies { get { lock (locker) { return _insta_proxies; } } }
+        public List<Dictionary<string, object>> MailProxies { get { lock (locker) { return _mail_proxies; } } }
         #endregion
     }
 }

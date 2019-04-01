@@ -64,7 +64,7 @@ namespace Instagram_Checker
                 controlWorker.RunWorkerAsync();
 
                 btnLoad.IsEnabled = false;
-                logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Start check info", UserName = null });
+                logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Start check info", UserName = null });
 
                 _model.InitProxy((bool)cbApiProxy.IsChecked ? true : false, tbProxyKey.Text);
 
@@ -117,7 +117,7 @@ namespace Instagram_Checker
         {
             while (!_model.IsProgramComplitlyEnded)
             {
-                Dispatcher.Invoke(() => 
+                Dispatcher.Invoke(() =>
                 {
                     lbThreadsInWork.Content = Process.GetCurrentProcess().Threads.Count.ToString();
                 });
@@ -227,7 +227,7 @@ namespace Instagram_Checker
                 if (DateTime.Now.Minute - time.Minute > 5 || _model.NeedMoreProxy == true)
                 {
                     _model.UpdateProxy(key);
-                    logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Update proxy... updated = {_model.GetProxy.CountProxy}", UserName = null });
+                    logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Update proxy... updated = {_model.GetProxy.CountProxy}", UserName = null });
                     time = DateTime.Now;
                     _model.NeedMoreProxy = false;
                 }
@@ -249,47 +249,56 @@ namespace Instagram_Checker
 
             _model.InitAccounts();
             _model.InitAccountsMail();
+            _model.InitAgents();
 
             int countMail = 0;
             int countPrx = 0;
             int countAcc = 0;
+            int countAgents = 0;
             while (true)
             {
                 if (_model.IsAccountInited && countAcc == 0)
                 {
-                    logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready ({_model.GetAccounts.CountUsers})", UserName = null });
+                    logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready ({_model.GetAccounts.CountUsers})", UserName = null });
                     countAcc++;
                 }
 
                 if (_model.IsProxyInited && countPrx == 0)
                 {
-                    logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Proxy are ready ({_model.GetProxy.CountProxy})", UserName = null });
+                    logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Proxy are ready ({_model.GetProxy.CountProxy})", UserName = null });
                     countPrx++;
                 }
 
                 if (_model.IsMailsReady && countMail == 0)
                 {
-                    logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
+                    logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
                     countMail++;
                 }
 
-                if (_model.IsAccountInited && _model.IsProxyInited && _model.IsMailsReady && countMail == 1 && countPrx == 1 && countAcc == 1)
+                if (_model.IsAgentsInited && countAgents == 0)
+                {
+                    logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Agents are ready ({_model.GetUserAgents.CountAgents})", UserName = null });
+                    countAgents++;
+                }
+
+                if (_model.IsAccountInited && _model.IsProxyInited && _model.IsMailsReady && _model.IsAgentsInited && countMail == 1 && countPrx == 1 && countAcc == 1 && countAgents == 1)
                     break;
             }
 
             if (countPrx == 0)
-                logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Proxy are ready ({_model.GetProxy.CountProxy})", UserName = null });
+                logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Proxy are ready ({_model.GetProxy.CountProxy})", UserName = null });
             else if (countAcc == 0)
-                logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready ({_model.GetAccounts.CountUsers})", UserName = null });
+                logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready ({_model.GetAccounts.CountUsers})", UserName = null });
             else if (countMail == 0)
-                logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
-
+                logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
+            else if (countAgents == 0)
+                logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Agents are ready ({_model.GetUserAgents.CountAgents})", UserName = null });
 
             _model.InitObjects(threadsCount, splitCount);
-            logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Определяем точное количество потоков...", UserName = null });
+            logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Определяем точное количество потоков...", UserName = null });
 
             while (!_model.IsObjectsReady) { }
-            logging.Invoke(LogIO.path, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Objects are resolved", UserName = null });
+            logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Objects are resolved", UserName = null });
 
         }
 
