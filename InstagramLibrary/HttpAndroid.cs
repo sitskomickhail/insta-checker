@@ -262,6 +262,58 @@ namespace InstagramLibrary
             throw exeption;
         }
 
+        public async Task<PasswordChangeResult> ChangePassword(string newPassword)
+        {
+            Debug.WriteLine("Change password");
+
+            try
+            {
+                string data = $"old_password={Password}&new_password1={newPassword}&new_password2={newPassword}";
+
+                var content = Encoding.ASCII.GetBytes(data);
+                var request = HttpRequestBuilder.Post("https://www.instagram.com/accounts/password/change/?hl=ru", _userAgent, mCoockieC);
+                request.Referer = "https://www.instagram.com/accounts/password/change/?hl=ru";
+                request.ContentType = "application/x-www-form-urlencoded";
+                request.ContentLength = content.Length;
+                request.KeepAlive = true;
+                request.Headers["Origin"] = "https://www.instagram.com";
+                // maybe exception if mCookieC not contain csrftoken
+                request.Headers["X-CSRFToken"] = mCoockieC.GetCookies(new Uri("https://www.instagram.com"))["csrftoken"].Value;
+                request.Headers["X-Instagram-AJAX"] = "1";
+                request.Headers["X-IG-App-ID"] = "936619743392459";
+                request.Proxy = _proxy;
+                using (var requestStream = await request.GetRequestStreamAsync())
+                {
+                    requestStream.Write(content, 0, content.Length);
+                    HttpWebResponse response = null;
+                    try
+                    {
+                        response = await request.GetResponseAsync() as HttpWebResponse;
+                    }
+                    catch (WebException e)
+                    {
+                        response = (HttpWebResponse)e.Response;
+                    }
+
+                    using (var responseStream = response.GetResponseStream())
+                    using (var streamReader = new StreamReader(responseStream))
+                    {
+                        // If we get result, it always return status ok. Otherwise, exception will occur.                                           
+                        mCoockieC.Add(response.Cookies);
+                        var responseData = streamReader.ReadToEnd();
+                        return JsonConvert.DeserializeObject<PasswordChangeResult>(responseData);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // When you change your username with existed username, you will receive 404 error
+                // and obviously exception will occur. In this case, just return false
+                Debug.WriteLine(ex.Message);
+                return new PasswordChangeResult() { status = "false" };
+            }
+        }
+
         public bool ConfirmMail(string path, Dictionary<string, object> mailProxyDictionary)
         {
             bool check = false;
@@ -281,7 +333,6 @@ namespace InstagramLibrary
                 if (check)
                     mailProxy = _proxy;
 
-                Console.WriteLine("Confrim Mail start");
                 try
                 {
                     var bootstrapRequest = HttpRequestBuilder.Get($"{path}", _userAgent, mCoockieC);

@@ -49,6 +49,7 @@
     <Compile Include="HttpAndroid.cs" />
     <Compile Include="HttpRequestBuilder.cs" />
     <Compile Include="Model\LoginResult.cs" />
+    <Compile Include="Model\PasswordChangeResult.cs" />
     <Compile Include="Model\ProfileResult.cs" />
     <Compile Include="Model\RootobjectChallenge.cs" />
     <Compile Include="Model\UpdateProfileResult.cs" />

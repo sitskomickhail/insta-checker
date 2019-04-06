@@ -14,6 +14,7 @@ namespace FileLibrary
         private const string _checkpoint = @"\Result\Checkpoint.txt";
         private const string _addphone = @"\Result\Add_phone.txt";
         private const string _badmail = @"\Result\Bad_mail.txt";
+        private const string _badPass = @"\Result\Bad_pass.txt";
 
         public object[] locker = new object[1];
 
@@ -31,6 +32,8 @@ namespace FileLibrary
                     File.Create(Environment.CurrentDirectory + _addphone);
                 if (!File.Exists(Environment.CurrentDirectory + _badmail))
                     File.Create(Environment.CurrentDirectory + _badmail);
+                if (!File.Exists(Environment.CurrentDirectory + _badPass))
+                    File.Create(Environment.CurrentDirectory + _badPass);
             }
             else
             {
@@ -40,6 +43,7 @@ namespace FileLibrary
                 File.Create(Environment.CurrentDirectory + _checkpoint);
                 File.Create(Environment.CurrentDirectory + _addphone);
                 File.Create(Environment.CurrentDirectory + _badmail);
+                File.Create(Environment.CurrentDirectory + _badPass);
             }
         }
 
@@ -66,6 +70,11 @@ namespace FileLibrary
         public void BadMail(string account)
         {
             lock (locker) { File.AppendAllText(Environment.CurrentDirectory + "\\" + _badmail, account + "\n"); }
+        }
+
+        public void BadPass(string account)
+        {
+            lock (locker) { File.AppendAllText(Environment.CurrentDirectory + "\\" + _badPass, account + "\n"); }
         }
     }
 }

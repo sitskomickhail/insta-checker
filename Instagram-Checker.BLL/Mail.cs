@@ -21,7 +21,6 @@ namespace Instagram_Checker.BLL
 
         public string GetMailPath(DateTime dt)
         {
-
             try
             {
                 var res = ic.SelectMailbox("INBOX");
@@ -30,12 +29,12 @@ namespace Instagram_Checker.BLL
             {
                 return null;
             }
-            AE.Net.Mail.MailMessage[] mm = ic.GetMessages(ic.GetMessageCount() - 1, ic.GetMessageCount());
+            MailMessage[] mm = ic.GetMessages(ic.GetMessageCount() - 1, ic.GetMessageCount());
 
-            if (mm[mm.Length - 1].Date > dt)
+            if (mm[mm.Length - 1].Date >= dt)
             {
                 MailMessage message = ic.GetMessage(mm[mm.Length - 1].Uid);
-                
+
                 string path = $"message{r}.html";
                 FileStream filestream = new FileStream(path, FileMode.Create);
                 filestream.Close();
@@ -50,9 +49,6 @@ namespace Instagram_Checker.BLL
 
                 var nodes = doc.DocumentNode.SelectNodes("//a");
                 string result = nodes[0].GetAttributeValue("href", null);
-
-                File.Delete(path);
-
                 return result;
             }
             else
