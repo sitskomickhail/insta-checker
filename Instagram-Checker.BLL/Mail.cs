@@ -51,6 +51,8 @@ namespace Instagram_Checker.BLL
                 var nodes = doc.DocumentNode.SelectNodes("//a");
                 string result = nodes[0].GetAttributeValue("href", null);
 
+                File.Delete(path);
+
                 return result;
             }
             else

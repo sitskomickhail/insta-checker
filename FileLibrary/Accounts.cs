@@ -1,6 +1,7 @@
 ﻿using InstaLog;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,8 +27,6 @@ namespace FileLibrary
 
         public List<string> UsersForDeleting { get; private set; }
         private List<Dictionary<string, string>> _userAndHisFile;
-
-
         #endregion
 
         public Accounts()
@@ -58,25 +57,54 @@ namespace FileLibrary
 
         public void DeleteAccountsFromFile()
         {
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += Delete_DoWork;
+            worker.RunWorkerAsync();
+        }
+
+        private void Delete_DoWork(object sender, DoWorkEventArgs e)
+        {
+            List<string> accs = new List<string>();
             lock (locker)
             {
-                foreach (var account in UsersForDeleting)
+                foreach (var item in UsersForDeleting)
                 {
-                    for (int i = 0; i < _userAndHisFile.Count; i++)
-                    {
-                        if (_userAndHisFile[i]["user"] == account)
-                        {
-                            string path = _userAndHisFile[i]["fileName"];
+                    accs.Add(item);
+                }
+                UsersForDeleting.Clear();
+            }
 
-                            var file = new List<string>(System.IO.File.ReadAllLines(path));
-                            file.Remove(account);
-                            File.WriteAllLines(path, file.ToArray());
+            foreach (var account in accs)
+            {
+                for (int i = 0; i < _userAndHisFile.Count; i++)
+                {
+                    if (_userAndHisFile[i]["user"] == account)
+                    {
+                        string path = _userAndHisFile[i]["fileName"];
+
+                        var file = new List<string>(System.IO.File.ReadAllLines(path));
+                        file.Remove(account);
+                        while (true)
+                        {
+
+                            try
+                            {
+                                lock (locker)
+                                {
+                                    File.WriteAllLines(path, file);
+                                    break;
+                                }
+                            }
+                            catch
+                            {
+                                Thread.Sleep(2000);
+                            }
                         }
+                        Thread.Sleep(1000);
                     }
                 }
             }
         }
-
 
         private void SetUser(object state)
         {
@@ -85,6 +113,9 @@ namespace FileLibrary
 
             foreach (string user in str)
             {
+                if (String.IsNullOrEmpty(user))
+                    continue;
+
                 Dictionary<string, string> saveUser = new Dictionary<string, string>();
                 saveUser["fileName"] = filePath;
                 saveUser["user"] = user;

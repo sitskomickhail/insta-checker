@@ -1,24 +1,13 @@
-﻿using FileLibrary;
-using Instagram_Checker.BLL;
+﻿using Instagram_Checker.BLL;
 using InstaLog;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 
 namespace Instagram_Checker
@@ -38,7 +27,6 @@ namespace Instagram_Checker
         public MainWindow()
         {
             InitializeComponent();
-            _model = new Model();
             logging += ShowLog;
             _grid = new ObservableCollection<ShowCollection>();
             dgAccounts.ItemsSource = _grid;
@@ -52,9 +40,11 @@ namespace Instagram_Checker
 
         private void btnLoad_Click(object sender, RoutedEventArgs e)
         {
+            _model = new Model();
+
             int threadsCount = numcThreads.Value;
             int splitCount = numcAccsInThread.Value;
-
+            
             if (threadsCount > 0 && splitCount > 0)
             {
 
@@ -165,10 +155,10 @@ namespace Instagram_Checker
             DateTime time = DateTime.Now;
             while (!_model.IsProgramComplitlyEnded)
             {
-                if (DateTime.Now.Minute - time.Minute >= 5)
+                if (DateTime.Now.Minute - time.Minute >= 6)
                 {
                     logging.Invoke("EasyLog.log", new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Update proxy... updated = {_model.GetProxy.CountProxy}", UserName = null });
-
+                    time = DateTime.Now;
                 }
 
                 lock (_model.locker)
@@ -204,13 +194,17 @@ namespace Instagram_Checker
                 }
                 Thread.Sleep(100);
             }
+            logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, LogMessage = "Program complitely ended", Method = "MainWindow", UserName = null });
+            logging.Invoke(LogIO.easyPath, new Log() { Date = DateTime.Now, LogMessage = "Program complitely ended", Method = "MainWindow", UserName = null });
+            MessageBox.Show("Аккаунты успешно проверены", "Success", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK);
         }
 
         private void Start_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            MessageBox.Show("Програма успешно завершила свою работу");
+            MessageBox.Show("Програма успешно завершила свою работу", "Ended", MessageBoxButton.OK, MessageBoxImage.Exclamation, MessageBoxResult.OK);
             btnLoad.IsEnabled = true;
         }
+
         private void Start_DoWork(object sender, DoWorkEventArgs e)
         {
             object[] objs = (object[])e.Argument;
@@ -224,14 +218,7 @@ namespace Instagram_Checker
             while (!_model.IsProgramComplitlyEnded)
             {
                 Thread.Sleep(10000);
-                if (DateTime.Now.Minute - time.Minute > 5 || _model.NeedMoreProxy == true)
-                {
-                    _model.UpdateProxy(key);
-                    logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Update proxy... updated = {_model.GetProxy.CountProxy}", UserName = null });
-                    time = DateTime.Now;
-                    _model.NeedMoreProxy = false;
-                }
-                else if (DateTime.Now.Hour > time.Hour)
+                if (DateTime.Now.Hour > time.Hour)
                 {
                     time = DateTime.Now;
                 }

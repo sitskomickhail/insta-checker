@@ -45,27 +45,27 @@ namespace FileLibrary
 
         public void GoodValid(string account)
         {
-            lock (locker) { File.AppendAllText(_goodValid, account + "\n"); }
+            lock (locker) { File.AppendAllText(Environment.CurrentDirectory + "\\" + _goodValid, account + "\n"); }
         }
 
         public void BadValid(string account)
         {
-            lock (locker) { File.AppendAllText(_badValid, account + "\n"); }
+            lock (locker) { File.AppendAllText(Environment.CurrentDirectory + "\\" + _badValid, account + "\n"); }
         }
 
         public void Checkpoint(string account)
         {
-            lock (locker) { File.AppendAllText(_checkpoint, account + "\n"); }
+            lock (locker) { File.AppendAllText(Environment.CurrentDirectory + "\\" + _checkpoint, account + "\n"); }
         }
 
         public void AddPhone(string account)
         {
-            lock (locker) { File.AppendAllText(_addphone, account + "\n"); }
+            lock (locker) { File.AppendAllText(Environment.CurrentDirectory + "\\" + _addphone, account + "\n"); }
         }
 
         public void BadMail(string account)
         {
-            lock (locker) { File.AppendAllText(_badmail, account + "\n"); }
+            lock (locker) { File.AppendAllText(Environment.CurrentDirectory + "\\" + _badmail, account + "\n"); }
         }
     }
 }
