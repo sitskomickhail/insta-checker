@@ -36,7 +36,7 @@ namespace Instagram_Checker.BLL
             });
 
             int length = 1;
-            for (int i = 0; i < 2; i++)
+            while(true)
             {
                 MailMessage[] mm = ic.GetMessages(ic.GetMessageCount() - 1, ic.GetMessageCount());
                 if (mm.Length == 0)
@@ -148,14 +148,6 @@ namespace Instagram_Checker.BLL
                     return GetMailPath(dt);
                 }
             }
-            logging.Invoke("MailLog.log", new Log()
-            {
-                UserName = null,
-                Date = DateTime.Now,
-                LogMessage = $"Return null",
-                Method = "Mail.GetMailPath"
-            });
-            return null;
         }
     }
 }
