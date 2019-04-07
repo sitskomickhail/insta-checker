@@ -335,16 +335,15 @@ namespace InstagramLibrary
 
                 try
                 {
-                    var bootstrapRequest = HttpRequestBuilder.Get($"{path}", _userAgent, mCoockieC);
-                    bootstrapRequest.Proxy = mailProxy;
-                    bootstrapRequest.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3";
-                    bootstrapRequest.Headers["Upgrade-Insecure-Requests"] = "1";
-                    using (var bootstrapResponse = bootstrapRequest.GetResponse() as HttpWebResponse)
+                    var mailRequest = HttpRequestBuilder.Get($"{path}", _userAgent, mCoockieC);
+                    mailRequest.Proxy = mailProxy;
+                    mailRequest.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3";
+                    mailRequest.Headers["Upgrade-Insecure-Requests"] = "1";
+                    using (var bootstrapResponse = mailRequest.GetResponse() as HttpWebResponse)
                     {
                         using (Stream dataS = bootstrapResponse.GetResponseStream())
                         using (var streamReader = new StreamReader(dataS))
                         {
-                            Console.WriteLine("Confirmed");
                             string responseData = streamReader.ReadToEnd();
                             return true;
                         }
@@ -353,6 +352,13 @@ namespace InstagramLibrary
                 catch (Exception bex)
                 {
                     Debug.WriteLine("Bootstrap progress meet exception " + bex.Message);
+                    logging.Invoke(LogIO.mainLog, new Log()
+                    {
+                        UserName = null,
+                        Date = DateTime.Now,
+                        LogMessage = $"Finded exception {bex.Data}",
+                        Method = "HttpAndroid.ConfirmMail"
+                    });
                     if (!check)
                         check = true;
                     else

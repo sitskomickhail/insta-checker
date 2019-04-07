@@ -260,7 +260,7 @@ namespace Instagram_Checker.BLL
                                 string writePassword = instOptions[i]["instaPassword"];
 
                                 DateTime time = DateTime.Now;
-                                Thread.Sleep(1000);
+                                Thread.Sleep(3000);
                                 UpdateProfileResult updateStatus = await android.UpdateProfile(profile, resMail["mailLogin"]);
                                 
                                 if (updateStatus.status == "ok")
@@ -270,7 +270,9 @@ namespace Instagram_Checker.BLL
                                     try
                                     {
                                         Mail mailClient = new Mail(resMail["mailLogin"], resMail["mailPassword"]);
+                                        Thread.Sleep(1000);
                                         path = mailClient.GetMailPath(time);
+                                        Thread.Sleep(1000);
                                         confirmed = android.ConfirmMail(path, _proxy.MailProxies[Randomer.Next(0, _proxy.MailProxies.Count)]);
                                     }
                                     catch

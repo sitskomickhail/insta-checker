@@ -81,8 +81,11 @@ namespace FileLibrary
                     if (_userAndHisFile[i]["user"] == account)
                     {
                         string path = _userAndHisFile[i]["fileName"];
-
-                        var file = new List<string>(System.IO.File.ReadAllLines(path));
+                        List<string> file;
+                        lock (locker)
+                        {
+                            file = new List<string>(System.IO.File.ReadAllLines(path));
+                        }
                         file.Remove(account);
                         while (true)
                         {

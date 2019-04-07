@@ -8,7 +8,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-
+using System.Collections.Generic;
 
 namespace Instagram_Checker
 {
@@ -44,7 +44,7 @@ namespace Instagram_Checker
 
             int threadsCount = numcThreads.Value;
             int splitCount = numcAccsInThread.Value;
-            
+
             if (threadsCount > 0 && splitCount > 0)
             {
 
@@ -138,13 +138,25 @@ namespace Instagram_Checker
         {
             DataGridRow item = e.Row as DataGridRow;
             var col = e.Row.Item as ShowCollection;
+
+            SolidColorBrush brush = e.Row.Background as SolidColorBrush;
+            Color color;
+            if (brush.Color == Colors.White)
+                color = _color;
+            else
+                color = brush.Color;
+
             if (item != null && col != null)
             {
-                item.Background = new SolidColorBrush(_color);
+                if (col.Status == "Успешно")
+                item.Background = new SolidColorBrush(Colors.LightGreen);                
+                else
+                    item.Background = new SolidColorBrush(Colors.LightBlue);
             }
             else
                 item.Background = new SolidColorBrush(Colors.White);
         }
+
 
         private void GridWorker_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -199,12 +211,6 @@ namespace Instagram_Checker
             MessageBox.Show("Аккаунты успешно проверены", "Success", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK);
         }
 
-        private void Start_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            MessageBox.Show("Програма успешно завершила свою работу", "Ended", MessageBoxButton.OK, MessageBoxImage.Exclamation, MessageBoxResult.OK);
-            btnLoad.IsEnabled = true;
-        }
-
         private void Start_DoWork(object sender, DoWorkEventArgs e)
         {
             object[] objs = (object[])e.Argument;
@@ -223,6 +229,11 @@ namespace Instagram_Checker
                     time = DateTime.Now;
                 }
             }
+        }
+        private void Start_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            MessageBox.Show("Програма успешно завершила свою работу", "Ended", MessageBoxButton.OK, MessageBoxImage.Exclamation, MessageBoxResult.OK);
+            btnLoad.IsEnabled = true;
         }
 
         private void Load_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -293,6 +304,14 @@ namespace Instagram_Checker
         {
             _proxyWindow = new ProxyOptionWindow();
             _proxyWindow.Show();
+        }
+        
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            _model = new Model();
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += GridWorker_DoWork;
+            worker.RunWorkerAsync();
         }
     }
 }
