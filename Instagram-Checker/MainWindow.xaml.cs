@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Instagram_Checker
 {
@@ -23,10 +24,10 @@ namespace Instagram_Checker
         private Color _color;
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
 
-
         public MainWindow()
         {
             InitializeComponent();
+
             logging += ShowLog;
             _grid = new ObservableCollection<ShowCollection>();
             dgAccounts.ItemsSource = _grid;
@@ -47,7 +48,8 @@ namespace Instagram_Checker
 
             if (threadsCount > 0 && splitCount > 0)
             {
-
+                if (File.Exists("Log.log")) File.Delete("Log.log");
+                if (File.Exists("EasyLog.log")) File.Delete("EasyLog.log");
 
                 BackgroundWorker controlWorker = new BackgroundWorker();
                 controlWorker.DoWork += ControlWorker_DoWork;
@@ -83,7 +85,15 @@ namespace Instagram_Checker
                 }
 
                 btnStart.IsEnabled = false;
+                string hour = DateTime.Now.Hour.ToString(), minute = DateTime.Now.Minute.ToString(), second = DateTime.Now.Second.ToString();
+                if (DateTime.Now.Hour < 10)
+                    hour = $"0{DateTime.Now.Hour}";
+                if (DateTime.Now.Minute < 10)
+                    minute = $"0{DateTime.Now.Minute}";
+                if (DateTime.Now.Second < 10)
+                    second = $"0{DateTime.Now.Second}";
 
+                lbStartWorkingTime.Content = $"{hour}:{minute}:{second}";
                 object[] objs = new object[2] { tbProxyKey.Text, numcDelay.Value };
 
                 BackgroundWorker worker = new BackgroundWorker();
@@ -149,7 +159,7 @@ namespace Instagram_Checker
             if (item != null && col != null)
             {
                 if (col.Status == "Успешно")
-                item.Background = new SolidColorBrush(Colors.LightGreen);                
+                    item.Background = new SolidColorBrush(Colors.LightGreen);
                 else
                     item.Background = new SolidColorBrush(Colors.LightBlue);
             }
@@ -232,6 +242,15 @@ namespace Instagram_Checker
         }
         private void Start_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            string hour = DateTime.Now.Hour.ToString(), minute = DateTime.Now.Minute.ToString(), second = DateTime.Now.Second.ToString();
+            if (DateTime.Now.Hour < 10)
+                hour = $"0{DateTime.Now.Hour}";
+            if (DateTime.Now.Minute < 10)
+                minute = $"0{DateTime.Now.Minute}";
+            if (DateTime.Now.Second < 10)
+                second = $"0{DateTime.Now.Second}";
+
+            lbEndWorkingTime.Content = $"{hour}:{minute}:{second}";
             MessageBox.Show("Програма успешно завершила свою работу", "Ended", MessageBoxButton.OK, MessageBoxImage.Exclamation, MessageBoxResult.OK);
             btnLoad.IsEnabled = true;
         }
@@ -305,7 +324,7 @@ namespace Instagram_Checker
             _proxyWindow = new ProxyOptionWindow();
             _proxyWindow.Show();
         }
-        
+
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             _model = new Model();

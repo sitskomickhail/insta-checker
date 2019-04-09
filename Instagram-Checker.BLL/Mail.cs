@@ -36,7 +36,7 @@ namespace Instagram_Checker.BLL
             });
 
             int length = 1;
-            while(true)
+            for (int i = 0; i < 10; i++)
             {
                 MailMessage[] mm = ic.GetMessages(ic.GetMessageCount() - 1, ic.GetMessageCount());
                 if (mm.Length == 0)
@@ -148,6 +148,7 @@ namespace Instagram_Checker.BLL
                     return GetMailPath(dt);
                 }
             }
+            return null;
         }
     }
 }

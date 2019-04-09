@@ -129,8 +129,7 @@ namespace Instagram_Checker.BLL
                 worker.RunWorkerAsync();
             }
         }
-
-
+        
 
         public void CheckAllAccounts(int delay)
         {
@@ -159,6 +158,8 @@ namespace Instagram_Checker.BLL
             checkThreads.RunWorkerAsync();
         }
 
+        
+        #region BackgroundMethods
         private async void CheckInsta_DoWork(object sender, DoWorkEventArgs e)
         {
             object[] arg = (object[])e.Argument;
@@ -188,7 +189,7 @@ namespace Instagram_Checker.BLL
             int _i_helper = 0;
             bool threadIsWorking = true;
 
-            while (_account.CountUsers > 0)
+            while (true)
             {
                 for (int j = 0; j < 25; j++)
                 {
@@ -371,7 +372,7 @@ namespace Instagram_Checker.BLL
                     }
                     catch (Exception ex)
                     {
-                        logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception! {ex.Message} -- {ex.InnerException} -- {ex.Source} -- {ex.Data.Values}", Method = "Model.CheckInsta" });
+                        logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception! {ex.Message} -- {ex.Source}", Method = "Model.CheckInsta" });
                         if (ex.Message.Contains("400") || ex.Message.Contains("403"))
                         {
                             logging.Invoke(LogIO.easyPath, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception 400! Bad request! Switch proxy", Method = "Model.CheckInsta" });
@@ -413,7 +414,7 @@ namespace Instagram_Checker.BLL
                             break;
                     }
 
-                    if (Randomer.Next(0, 1950) == 162)
+                    if (Randomer.Next(0, 7200) == 162)
                         AccsBlocked++;
                 }
                 if (!threadIsWorking)
@@ -422,8 +423,6 @@ namespace Instagram_Checker.BLL
         }
 
 
-
-        #region BackgroundMethods
 
         private void AccountsMail_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
@@ -480,6 +479,8 @@ namespace Instagram_Checker.BLL
                 pos += savePos;
                 maxPos += savePos;
             }
+
+            _account.Users.Clear();
         }
 
         private void UpdateProxy_DoWork(object sender, DoWorkEventArgs e)
@@ -543,7 +544,7 @@ namespace Instagram_Checker.BLL
         {
             while (true)
             {
-                Thread.Sleep(30000);
+                Thread.Sleep(180000);
                 lock (_account.locker)
                 {
                     _account.DeleteAccountsFromFile();

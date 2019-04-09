@@ -4,19 +4,20 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace FileLibrary
 {
     public class Accounts
     {
         private List<Dictionary<string, string>> _users;
+        private List<string> _paths;
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
         private const string path = @"\base\InstaLogins\";
         private int _filesCount;
         private int _currentPosition;
+
+        private int _checkDelete;
 
         public object[] locker = new object[1];
 
@@ -35,6 +36,7 @@ namespace FileLibrary
             UsersForDeleting = new List<string>();
             _userAndHisFile = new List<Dictionary<string, string>>();
             _users = new List<Dictionary<string, string>>();
+            _paths = new List<string>();
         }
 
 
@@ -57,62 +59,48 @@ namespace FileLibrary
 
         public void DeleteAccountsFromFile()
         {
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += Delete_DoWork;
-            worker.RunWorkerAsync();
+            foreach (var path in _paths)
+            {
+                BackgroundWorker worker = new BackgroundWorker();
+                worker.DoWork += Delete_DoWork;
+                worker.RunWorkerAsync(path);
+            }
+
         }
 
         private void Delete_DoWork(object sender, DoWorkEventArgs e)
         {
-            List<string> accs = new List<string>();
+            string path = (string)e.Argument;
+
+            List<string> allUsersFromFile = File.ReadAllLines(path).ToList();
+            bool check = false;
             lock (locker)
             {
-                foreach (var item in UsersForDeleting)
+                foreach (string user in UsersForDeleting)
                 {
-                    accs.Add(item);
-                }
-                UsersForDeleting.Clear();
-            }
-
-            foreach (var account in accs)
-            {
-                for (int i = 0; i < _userAndHisFile.Count; i++)
-                {
-                    if (_userAndHisFile[i]["user"] == account)
-                    {
-                        string path = _userAndHisFile[i]["fileName"];
-                        List<string> file;
-                        lock (locker)
-                        {
-                            file = new List<string>(System.IO.File.ReadAllLines(path));
-                        }
-                        file.Remove(account);
-                        while (true)
-                        {
-
-                            try
-                            {
-                                lock (locker)
-                                {
-                                    File.WriteAllLines(path, file);
-                                    break;
-                                }
-                            }
-                            catch
-                            {
-                                Thread.Sleep(2000);
-                            }
-                        }
-                        Thread.Sleep(1000);
-                    }
+                    check = true;
+                    allUsersFromFile.Remove(user);
                 }
             }
+
+            _checkDelete++;
+
+            if (UsersForDeleting.Count >= 8000 && _checkDelete == _paths.Count)
+                lock (locker)
+                {
+                    UsersForDeleting.Clear();
+                    _checkDelete = 0;
+                }
+
+            if (check)
+                File.WriteAllLines(path, allUsersFromFile);
         }
 
         private void SetUser(object state)
         {
             string filePath = (string)state;
             string[] str = File.ReadAllLines(filePath);
+            _paths.Add(filePath);
 
             foreach (string user in str)
             {

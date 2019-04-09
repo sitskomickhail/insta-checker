@@ -135,8 +135,8 @@
         </GroupBox>
         <Grid Grid.Column="1" Grid.Row="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="0.5*"/>
-                <RowDefinition Height="0.5*"/>
+                <RowDefinition Height="0.7*"/>
+                <RowDefinition Height="0.4*"/>
             </Grid.RowDefinitions>
             <Grid Margin="5">
                 <Grid.ColumnDefinitions>
@@ -144,6 +144,8 @@
                     <ColumnDefinition Width="0.25*"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="*"/>
                     <!--<RowDefinition Height="*"/>-->
@@ -156,9 +158,17 @@
                 <Label Grid.Row="1" Grid.Column="1" x:Name="lbProxyUsed"
                        Padding="24, 4, 0, 0">0</Label>
 
-                <!--<Label Grid.Row="2">Время работы:</Label>
+                <Label Grid.Row="2"
+                       Foreground="Blue">Время начала работы:</Label>
                 <Label Grid.Row="2" Grid.Column="1"
-                       x:Name="lbWorkingTime">00:00:00</Label>-->
+                       x:Name="lbStartWorkingTime"
+                       Foreground="Blue">00:00:00</Label>
+                
+                <Label Grid.Row="3"
+                       Foreground="Blue">Время окончания работы:</Label>
+                <Label Grid.Row="3" Grid.Column="1"
+                       x:Name="lbEndWorkingTime"
+                       Foreground="Blue">00:00:00</Label>
             </Grid>
             <StackPanel Grid.Column="1" Grid.Row="1">
                 <Button x:Name="btnLoad"
@@ -167,7 +177,7 @@
                     Click="btnLoad_Click"/>
                 <Button x:Name="btnStart"
                     Content="Старт"
-                    Margin="10"
+                    Margin="10, 0, 10, 10"
                     IsEnabled="False" Click="btnStart_Click"/>
             </StackPanel>
         </Grid>
