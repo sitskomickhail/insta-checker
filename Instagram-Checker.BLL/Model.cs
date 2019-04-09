@@ -22,7 +22,7 @@ namespace Instagram_Checker.BLL
 
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
 
-        private string _proxyKey;
+        private List<string> _proxyHrefs;
         private int _threadCount;
         private List<object> _objectsInstaLogs;
 
@@ -90,14 +90,14 @@ namespace Instagram_Checker.BLL
             worker.RunWorkerAsync();
         }
 
-        public void InitProxy(bool isApiNeed, string key = null)
+        public void InitProxy(bool isApiNeed, List<string> hrefs = null)
         {
-            if (key != null && isApiNeed == true)
-                _proxyKey = key;
+            if (isApiNeed == true)
+                _proxyHrefs = hrefs;
             BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += new DoWorkEventHandler(Worker_InitProxy);
+            worker.DoWork += Worker_InitProxy;
             worker.RunWorkerCompleted += Worker_InitProxyCompleted;
-            object[] objs = new object[2] { isApiNeed, key };
+            object[] objs = new object[2] { isApiNeed, hrefs };
             worker.RunWorkerAsync(objs);
         }
 
@@ -119,17 +119,18 @@ namespace Instagram_Checker.BLL
             worker.RunWorkerAsync();
         }
 
-        public void UpdateProxy(string key)
+        public void UpdateProxy(List<string> hrefs)
         {
-            if (key != null)
-            {
-                BackgroundWorker worker = new BackgroundWorker();
-                worker.DoWork += UpdateProxy_DoWork;
-                worker.RunWorkerCompleted += UpdateProxy_RunWorkerCompleted;
-                worker.RunWorkerAsync();
-            }
+            if (hrefs != null)
+                if (hrefs.Count > 0)
+                {
+                    BackgroundWorker worker = new BackgroundWorker();
+                    worker.DoWork += UpdateProxy_DoWork;
+                    worker.RunWorkerCompleted += UpdateProxy_RunWorkerCompleted;
+                    worker.RunWorkerAsync();
+                }
         }
-        
+
 
         public void CheckAllAccounts(int delay)
         {
@@ -158,7 +159,7 @@ namespace Instagram_Checker.BLL
             checkThreads.RunWorkerAsync();
         }
 
-        
+
         #region BackgroundMethods
         private async void CheckInsta_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -216,10 +217,11 @@ namespace Instagram_Checker.BLL
                         {
                             _noMoreProxy = false;
                             logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, LogMessage = "Last 500 proxy!", UserName = null, Method = "Model.CheckInsta" });
-                            if (_proxyKey != null)
+                            if (_proxyHrefs != null)
                             {
-                                logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, LogMessage = "Update proxy with key!", UserName = null, Method = "Model.CheckInsta" });
-                                UpdateProxy(_proxyKey);
+                                if (_proxyHrefs.Count > 0)
+                                    logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, LogMessage = "Update link proxies!", UserName = null, Method = "Model.CheckInsta" });
+                                UpdateProxy(_proxyHrefs);
                                 while (!_noMoreProxy) { }
                             }
                             else
@@ -229,7 +231,6 @@ namespace Instagram_Checker.BLL
                                 {
                                     _proxy.GetAllInfoFromFile();
                                     _proxy.ResolveProxy(_accMails.CountMails);
-
                                 }).Wait();
                                 _noMoreProxy = true;
                             }
@@ -263,7 +264,7 @@ namespace Instagram_Checker.BLL
                                 DateTime time = DateTime.Now;
                                 Thread.Sleep(3000);
                                 UpdateProfileResult updateStatus = await android.UpdateProfile(profile, resMail["mailLogin"]);
-                                
+
                                 if (updateStatus.status == "ok")
                                 {
                                     bool confirmed = true;
@@ -408,10 +409,18 @@ namespace Instagram_Checker.BLL
 
                     if (proxyPos == proxyOptions.Count)
                     {
-                        if (_proxy.GetProxy(_proxyKey))
+                        bool checkIf = true;
+                        if (_proxyHrefs != null)
+                            if (_proxyHrefs.Count > 0)
+                            {
+                                UpdateProxy(_proxyHrefs);
+                                checkIf = false;
+                            }
+                        if (checkIf)
+                        {
+                            _proxy.GetAllInfoFromFile();
                             _proxy.ResolveProxy(_accMails.CountMails);
-                        else
-                            break;
+                        }
                     }
 
                     if (Randomer.Next(0, 7200) == 162)
@@ -485,9 +494,10 @@ namespace Instagram_Checker.BLL
 
         private void UpdateProxy_DoWork(object sender, DoWorkEventArgs e)
         {
-            string key = (string)e.Argument;
-            _proxy.GetProxy(key);
-            _proxy.ResolveProxy(_accMails.CountMails);
+            List<string> hrefs = (List<string>)e.Argument;
+            _proxy.GetRefProxy(hrefs);
+            while (_proxy.IsProxyReady)
+                _proxy.ResolveProxy(_accMails.CountMails);
         }
         private void UpdateProxy_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
@@ -503,10 +513,13 @@ namespace Instagram_Checker.BLL
         {
             object[] opts = (object[])e.Argument;
             if ((bool)opts[0])
-                _proxy.GetProxy((string)opts[1]);
+                _proxy.GetRefProxy((List<string>)opts[1]);
+
+            //Thread.Sleep(5000);
             _proxy.GetAllInfoFromFile();
             _proxy.InstaProxy_Init();
             _proxy.MailProxy_Init();
+            while (!_proxy.IsProxyReady) { }
         }
 
 

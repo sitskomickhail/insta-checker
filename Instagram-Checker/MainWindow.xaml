@@ -7,7 +7,8 @@
         xmlns:Numeric="clr-namespace:Instagram_Checker"
         mc:Ignorable="d"
         Icon="instagramIcon.png"
-        Title="Instagram-Checker" Height="685" Width="900">
+        Title="Instagram-Checker" Height="685" Width="900"
+        Closing="Window_Closing">
     <Window.Resources>
         <Numeric:Numeric_UpDown x:Key="NumericUpDown"/>
     </Window.Resources>
@@ -34,15 +35,14 @@
         </Border>
         <GroupBox Grid.Column="1" Header="Настройки">
             <StackPanel>
-                <CheckBox IsEnabled="True" Content="Использовать Best-Proxies" FontSize="11" Margin="5, 5, 0, 0"
-                          x:Name="cbApiProxy" IsChecked="False"/>
-                <TextBox x:Name="tbProxyKey"
-                         IsEnabled="{Binding ElementName=cbApiProxy, Path=IsChecked}"
-                         Margin="5"/>
-                <!--<Button Content="Настройки прокси"
+                <CheckBox IsEnabled="True" Content="Использовать ссылочные прокси"
+                          FontSize="11" Margin="5, 5, 0, 0"
+                          x:Name="cbApiProxy" IsChecked="True"/>
+                <Button Content="Настройки прокси"
                         x:Name="btnProxyOptions"
                         Click="btnProxyOptions_Click"
-                        Margin="5"/>-->
+                        Margin="5"
+                        IsEnabled="True"/>
                 <GroupBox Header="Настройки работы" Margin="5">
                     <Grid>
                         <Grid.ColumnDefinitions>

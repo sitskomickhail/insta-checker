@@ -17,3 +17,4 @@ E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\HtmlAgilityPack.dl
 E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\AE.Net.Mail.pdb
 E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\HtmlAgilityPack.pdb
 E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\HtmlAgilityPack.xml
+E:\Projects\Instagram-Checker\Instagram-Checker.BLL\bin\Debug\Newtonsoft.Json.pdb

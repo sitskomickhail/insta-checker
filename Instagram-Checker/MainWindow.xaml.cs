@@ -31,6 +31,7 @@ namespace Instagram_Checker
             logging += ShowLog;
             _grid = new ObservableCollection<ShowCollection>();
             dgAccounts.ItemsSource = _grid;
+            _proxyWindow = new ProxyOptionWindow();
         }
 
         private void ShowLog(string tmp, Log log)
@@ -38,6 +39,11 @@ namespace Instagram_Checker
             this.Dispatcher.Invoke(() => tbLog.Text = tbLog.Text + log + '\n');
         }
 
+
+        private void btnProxyOptions_Click(object sender, RoutedEventArgs e)
+        {
+            _proxyWindow.Show();
+        }
 
         private void btnLoad_Click(object sender, RoutedEventArgs e)
         {
@@ -58,7 +64,7 @@ namespace Instagram_Checker
                 btnLoad.IsEnabled = false;
                 logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Start check info", UserName = null });
 
-                _model.InitProxy((bool)cbApiProxy.IsChecked ? true : false, tbProxyKey.Text);
+                _model.InitProxy((bool)cbApiProxy.IsChecked ? true : false, _proxyWindow.AllLinks); //List<strings>
 
                 int[] obj = new int[2] { threadsCount, splitCount };
 
@@ -94,7 +100,7 @@ namespace Instagram_Checker
                     second = $"0{DateTime.Now.Second}";
 
                 lbStartWorkingTime.Content = $"{hour}:{minute}:{second}";
-                object[] objs = new object[2] { tbProxyKey.Text, numcDelay.Value };
+                object[] objs = new object[1] { numcDelay.Value };
 
                 BackgroundWorker worker = new BackgroundWorker();
                 worker.DoWork += Start_DoWork;
@@ -112,6 +118,36 @@ namespace Instagram_Checker
             else
                 MessageBox.Show("Задержка не может быть отрицательным числом\nПожалуйста измените её значение", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+        
+        private void dgAccounts_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+            DataGridRow item = e.Row as DataGridRow;
+            var col = e.Row.Item as ShowCollection;
+
+            SolidColorBrush brush = e.Row.Background as SolidColorBrush;
+            Color color;
+            if (brush.Color == Colors.White)
+                color = _color;
+            else
+                color = brush.Color;
+
+            if (item != null && col != null)
+            {
+                if (col.Status == "Успешно")
+                    item.Background = new SolidColorBrush(Colors.LightGreen);
+                else
+                    item.Background = new SolidColorBrush(Colors.LightBlue);
+            }
+            else
+                item.Background = new SolidColorBrush(Colors.White);
+        }
+        
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            _proxyWindow.Close();
+        }
+
+
 
         private void ControlWorker_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -143,30 +179,6 @@ namespace Instagram_Checker
                 });
             }
         }
-
-        private void dgAccounts_LoadingRow(object sender, DataGridRowEventArgs e)
-        {
-            DataGridRow item = e.Row as DataGridRow;
-            var col = e.Row.Item as ShowCollection;
-
-            SolidColorBrush brush = e.Row.Background as SolidColorBrush;
-            Color color;
-            if (brush.Color == Colors.White)
-                color = _color;
-            else
-                color = brush.Color;
-
-            if (item != null && col != null)
-            {
-                if (col.Status == "Успешно")
-                    item.Background = new SolidColorBrush(Colors.LightGreen);
-                else
-                    item.Background = new SolidColorBrush(Colors.LightBlue);
-            }
-            else
-                item.Background = new SolidColorBrush(Colors.White);
-        }
-
 
         private void GridWorker_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -225,8 +237,7 @@ namespace Instagram_Checker
         {
             object[] objs = (object[])e.Argument;
 
-            string key = objs[0].ToString();
-            int delay = (int)objs[1];
+            int delay = (int)objs[0];
 
             _model.CheckAllAccounts(delay);
             DateTime time = DateTime.Now;
@@ -319,18 +330,5 @@ namespace Instagram_Checker
 
         }
 
-        private void btnProxyOptions_Click(object sender, RoutedEventArgs e)
-        {
-            _proxyWindow = new ProxyOptionWindow();
-            _proxyWindow.Show();
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            _model = new Model();
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += GridWorker_DoWork;
-            worker.RunWorkerAsync();
-        }
     }
 }

@@ -5,92 +5,60 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Configuration;
 using InstaLog;
+using System.ComponentModel;
 
 namespace FileLibrary
 {
     public class Proxy
     {
-        private List<Dictionary<string, object>> _insta_proxies;
-        private List<Dictionary<string, object>> _mail_proxies;
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
 
-        public object[] locker = new object[1];
-
-        private List<Thread> _threads;
-
+        private List<Dictionary<string, object>> _insta_proxies;
+        private List<Dictionary<string, object>> _mail_proxies;
         private const string _instaProxyPath = "Proxy_Insta.txt";
         private const string _mailProxyPath = "Proxy_Mail.txt";
 
+        private int _countLinks;
+        public object[] locker = new object[1];
+        
+
+        #region PROPS
+        public List<Dictionary<string, object>> InstaProxies { get { lock (locker) { return _insta_proxies; } } }
+        public List<Dictionary<string, object>> MailProxies { get { lock (locker) { return _mail_proxies; } } }
+        public bool IsProxyReady { get; private set; }
+        #endregion
+
         public Proxy()
         {
-            _threads = new List<Thread>();
             _insta_proxies = new List<Dictionary<string, object>>();
             _mail_proxies = new List<Dictionary<string, object>>();
+
+            IsProxyReady = true;
         }
 
         public int CountProxy { get { return _insta_proxies.Count() + _mail_proxies.Count; } }
 
-        public bool GetProxy(string key)
+
+        public void GetRefProxy(List<string> hrefs)
         {
-            if (String.IsNullOrWhiteSpace(key))
+            IsProxyReady = false;
+            _countLinks = hrefs.Count;
+            foreach (var href in hrefs)
             {
-                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy key doesn't exist", Method = "Proxy.JSonProxy" });
-                return false;
-            }
-
-            HttpWebRequest webRequest = WebRequest.Create
-                ($"http://api.best-proxies.ru/proxylist.json?key={key}&limit=0")
-                            as HttpWebRequest;
-            if (webRequest == null)
-                return false;
-
-            webRequest.ContentType = "application/json";
-
-            try
-            {
-                using (var s = webRequest.GetResponse().GetResponseStream())
+                if (String.IsNullOrWhiteSpace(href))
                 {
-                    using (var sr = new StreamReader(s))
-                    {
-                        var contributorsAsJson = sr.ReadToEnd();
-                        var result = JsonConvert.DeserializeObject<List<ApiProxy>>(contributorsAsJson);
-
-                        int position = result.Count / 2;
-                        for (int i = 0; i < position; i++)
-                        {
-                            //if (result[i].http != "1" && result[i].https != "1")
-                            //    continue;
-                            Dictionary<string, object> prxInst = new Dictionary<string, object>();
-                            prxInst.Add("ip", result[i].real_ip);
-                            prxInst.Add("port", Int32.Parse(result[i].port));
-
-                            _insta_proxies.Add(prxInst);
-
-                            try
-                            {
-                                Dictionary<string, object> prxMail = new Dictionary<string, object>();
-                                prxMail.Add("ip", result[i + position].real_ip);
-                                prxMail.Add("port", Int32.Parse(result[i + position].port));
-
-                                _mail_proxies.Add(prxMail);
-                            }
-                            catch { }
-                        }
-                        logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Api returned {result.Count} proxy accounts", Method = "Proxy.JSonProxy" });
-                    }
+                    logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Link doesn't exist", Method = "Proxy.GetRefProxy" });
+                    _countLinks--;
+                    continue;
                 }
-            }
-            catch (Exception e)
-            {
-                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = e.Message, Method = "Proxy.JSonProxy" });
-                return false;
-            }
-            return true;
-        }
 
+                BackgroundWorker worker = new BackgroundWorker();
+                worker.DoWork += AWMProxySetter_DoWork;
+                worker.RunWorkerAsync(href);
+            }
+        }
+        
         public bool InstaProxy_Init()
         {
             var time = DateTime.Now;
@@ -234,35 +202,49 @@ namespace FileLibrary
             _insta_proxies.Clear();
         }
 
-        #region PROPS
-        public List<Dictionary<string, object>> InstaProxies { get { lock (locker) { return _insta_proxies; } } }
-        public List<Dictionary<string, object>> MailProxies { get { lock (locker) { return _mail_proxies; } } }
+        #region BACKGROUND
+        private int _linksUsed;
+        private void AWMProxySetter_DoWork(object sender, DoWorkEventArgs e)
+        {
+            string link = (string)e.Argument;
+
+            HttpWebRequest webRequest = WebRequest.Create($"{link}") as HttpWebRequest;
+            if (webRequest == null)
+
+                webRequest.ContentType = "text/plain;charset=UTF-8";
+
+            List<string> parsed;
+            using (var s = webRequest.GetResponse().GetResponseStream())
+            {
+                using (var sr = new StreamReader(s))
+                {
+                    var contributorsAsJson = sr.ReadToEnd();
+                    parsed = contributorsAsJson.Split('\n').ToList();
+                }
+            }
+
+            bool check = true;
+            foreach (var proxyUri in parsed)
+            {
+                string[] proxy = proxyUri.Split(':');
+
+                Dictionary<string, object> prxInst = new Dictionary<string, object>();
+                prxInst.Add("ip", proxy[0]);
+                prxInst.Add("port", Int32.Parse(proxy[1]));
+
+                if (check)
+                    _insta_proxies.Add(prxInst);
+                else
+                    _mail_proxies.Add(prxInst);
+            }
+
+            _linksUsed++;
+            if (_linksUsed == _countLinks)
+            {
+                IsProxyReady = true;
+                _linksUsed = 0;
+            }
+        }
         #endregion
     }
-}
-
-
-public class ApiProxy
-{
-    public string ip { get; set; }
-    public string port { get; set; }
-    public string http { get; set; }
-    public string https { get; set; }
-    public string socks4 { get; set; }
-    public string socks5 { get; set; }
-    public string level { get; set; }
-    public string yandex { get; set; }
-    public string google { get; set; }
-    public string mailru { get; set; }
-    public string twitter { get; set; }
-    public string country_code { get; set; }
-    public string response { get; set; }
-    public string good_count { get; set; }
-    public string bad_count { get; set; }
-    public string last_check { get; set; }
-    public string city { get; set; }
-    public string region { get; set; }
-    public string real_ip { get; set; }
-    public string test_time { get; set; }
-    public object me { get; set; }
 }
