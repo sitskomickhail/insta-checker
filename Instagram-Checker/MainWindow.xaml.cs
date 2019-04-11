@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Collections.Generic;
 using System.IO;
+using System.Configuration;
 
 namespace Instagram_Checker
 {
@@ -24,14 +25,40 @@ namespace Instagram_Checker
         private Color _color;
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
 
+        public List<string> Links { get; set; }
+        public bool IpAdress { get; private set; }
+
         public MainWindow()
         {
             InitializeComponent();
-
-            logging += ShowLog;
-            _grid = new ObservableCollection<ShowCollection>();
-            dgAccounts.ItemsSource = _grid;
-            _proxyWindow = new ProxyOptionWindow();
+            var manager = ConfigurationManager.ConnectionStrings["ipSecure"];
+            var conStrs = manager.ToString().Split(',');
+            if (iPChecker.EqualsRange(conStrs))
+            {
+                logging += ShowLog;
+                _grid = new ObservableCollection<ShowCollection>();
+                dgAccounts.ItemsSource = _grid;
+            }
+            else
+            {
+                btnLoad.IsEnabled = false;
+                btnProxyOptions.IsEnabled = false;
+                btnStart.IsEnabled = false;
+                numcAccsInThread.IsEnabled = false;
+                numcDelay.IsEnabled = false;
+                numcDelayMail.IsEnabled = false;
+                numcThreads.IsEnabled = false;
+                cbApiProxy.IsEnabled = false;
+                lbAllAccountsSwitched.Content = "disabled";
+                lbBlockedAccs.Content = "disabled";
+                lbBlockedProxy.Content = "disabled";
+                lbChallenge.Content = "disabled";
+                lbEndWorkingTime.Content = "disabled";
+                lbProxyUsed.Content = "disabled";
+                lbStartWorkingTime.Content = "disabled";
+                lbSuccess.Content = "disabled";
+                lbThreadsInWork.Content = "disabled";
+            }
         }
 
         private void ShowLog(string tmp, Log log)
@@ -42,8 +69,11 @@ namespace Instagram_Checker
 
         private void btnProxyOptions_Click(object sender, RoutedEventArgs e)
         {
+            _proxyWindow = new ProxyOptionWindow();
             _proxyWindow.Show();
         }
+
+
 
         private void btnLoad_Click(object sender, RoutedEventArgs e)
         {
@@ -54,6 +84,10 @@ namespace Instagram_Checker
 
             if (threadsCount > 0 && splitCount > 0)
             {
+                if (_proxyWindow == null)
+                    _proxyWindow = new ProxyOptionWindow();
+
+                btnProxyOptions.IsEnabled = false;
                 if (File.Exists("Log.log")) File.Delete("Log.log");
                 if (File.Exists("EasyLog.log")) File.Delete("EasyLog.log");
 
@@ -118,7 +152,7 @@ namespace Instagram_Checker
             else
                 MessageBox.Show("Задержка не может быть отрицательным числом\nПожалуйста измените её значение", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-        
+
         private void dgAccounts_LoadingRow(object sender, DataGridRowEventArgs e)
         {
             DataGridRow item = e.Row as DataGridRow;
@@ -141,10 +175,11 @@ namespace Instagram_Checker
             else
                 item.Background = new SolidColorBrush(Colors.White);
         }
-        
+
         private void Window_Closing(object sender, CancelEventArgs e)
         {
-            _proxyWindow.Close();
+            if (_proxyWindow != null)
+                _proxyWindow.Close();
         }
 
 
@@ -153,27 +188,27 @@ namespace Instagram_Checker
         {
             while (!_model.IsProgramComplitlyEnded)
             {
-                Dispatcher.Invoke(() =>
+                Dispatcher?.Invoke(() =>
                 {
                     lbThreadsInWork.Content = Process.GetCurrentProcess().Threads.Count.ToString();
                 });
                 Thread.Sleep(1000);
-                Dispatcher.Invoke(() =>
+                Dispatcher?.Invoke(() =>
                 {
                     lbAllAccountsSwitched.Content = _model.AccsSwitched.ToString();
                 });
                 Thread.Sleep(1000);
-                Dispatcher.Invoke(() =>
+                Dispatcher?.Invoke(() =>
                 {
                     lbProxyUsed.Content = _model.ProxySwitched.ToString();
                 });
                 Thread.Sleep(500);
-                Dispatcher.Invoke(() =>
+                Dispatcher?.Invoke(() =>
                 {
                     lbBlockedProxy.Content = _model.ProxyBlocked.ToString();
                 });
                 Thread.Sleep(500);
-                Dispatcher.Invoke(() =>
+                Dispatcher?.Invoke(() =>
                 {
                     lbBlockedAccs.Content = _model.AccsBlocked.ToString();
                 });
@@ -199,17 +234,12 @@ namespace Instagram_Checker
                 {
                     if (_model.AccountInfoDataSet_Required.Count > 0)
                     {
-                        string[] str = _model.AccountInfoDataSet_Required[0].Split(':');
                         _model.AccountInfoDataSet_Required.Remove(_model.AccountInfoDataSet_Required[0]);
-                        _color = Colors.LightBlue;
                         Dispatcher.Invoke(() =>
                         {
-                            _grid.Add(new ShowCollection() { ID = $"{pos}", Login = str[0], Password = str[1], Status = "Ожидается подтверждение" });
-                            dgAccounts.ItemsSource = _grid;
                             countChallenge++;
                             lbChallenge.Content = countChallenge.ToString();
                         });
-                        pos++;
                     }
                     if (_model.AccountInfoDataSet_Success.Count > 0)
                     {
@@ -264,6 +294,7 @@ namespace Instagram_Checker
             lbEndWorkingTime.Content = $"{hour}:{minute}:{second}";
             MessageBox.Show("Програма успешно завершила свою работу", "Ended", MessageBoxButton.OK, MessageBoxImage.Exclamation, MessageBoxResult.OK);
             btnLoad.IsEnabled = true;
+            btnProxyOptions.IsEnabled = true;
         }
 
         private void Load_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)

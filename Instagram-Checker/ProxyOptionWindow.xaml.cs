@@ -27,6 +27,7 @@ namespace Instagram_Checker
         }
 
 
+
         private void btnSuceedLink_Click(object sender, RoutedEventArgs e)
         {
             if (!String.IsNullOrWhiteSpace(tbProxyLink.Text))
