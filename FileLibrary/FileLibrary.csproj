@@ -59,7 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\InstaLog\InstaLog.csproj">
-      <Project>{AB50291F-44D8-4E51-9247-EA6B739B6938}</Project>
+      <Project>{ab50291f-44d8-4e51-9247-ea6b739b6938}</Project>
       <Name>InstaLog</Name>
     </ProjectReference>
   </ItemGroup>

@@ -8,6 +8,6 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("iconfinder_instagram_191275%20(1).png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("instagramicon.ico")]
 
 

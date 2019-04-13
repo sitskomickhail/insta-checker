@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:Instagram_Checker"        
         xmlns:Numeric="clr-namespace:Instagram_Checker"
         mc:Ignorable="d"
-        Icon="instagramIcon.png"
+        Icon="instagramIcon.ico"
+        WindowStartupLocation="CenterScreen"
         Title="Instagram-Checker" Height="685" Width="900"
         Closing="Window_Closing">
     <Window.Resources>
@@ -61,28 +62,22 @@
                             <TextBlock TextWrapping="Wrap" Text="Количество потоков" FontSize="10"
                                        Padding="2"></TextBlock>
                         </Label>
+
                         <Numeric:Numeric_UpDown x:Name="numcDelay" Margin="5" Grid.Row="1"/>
-                        <Label Grid.Column="1" Grid.Row="2" Padding="13, 10, 0, 0">
-                            <TextBlock TextWrapping="Wrap" Text="Задержка Mail" FontSize="10"
+                        <Label Grid.Column="1" Grid.Row="1" Padding="23, 10, 0, 0">
+                            <TextBlock TextWrapping="Wrap" Text="Задержка запроса" FontSize="10"
                                        Padding="2"></TextBlock>
                         </Label>
 
                         <Numeric:Numeric_UpDown x:Name="numcDelayMail" Margin="5" Grid.Row="2"
                                                 Value="5"/>
-                        <Label Grid.Column="1" Grid.Row="1" Padding="23, 10, 0, 0">
-                            <TextBlock TextWrapping="Wrap" Text="Задержка" FontSize="10"
-                                       Padding="2"></TextBlock>
-                        </Label>
-
-                        <Numeric:Numeric_UpDown x:Name="numcAccsInThread" Margin="5" Grid.Row="3"
-                                                Value="4500"/>
-                        <Label Grid.Column="1" Grid.Row="3" Padding="17, 5, 0, 0">
-                            <TextBlock TextWrapping="Wrap" Text="Аккаунтов в потоке" FontSize="10"
-                                       Padding="2"></TextBlock>
+                        <Label Grid.Column="1" Grid.Row="2" Padding="13, 10, 0, 0">
+                            <TextBlock TextWrapping="Wrap" Text="Задержка Mail" FontSize="10"
+                                       Padding="20, 2, 2, 2"></TextBlock>
                         </Label>
                     </Grid>
                 </GroupBox>
-                <GroupBox Header="Результат работы" Margin="5">
+                <GroupBox Header="Результат работы" Margin="5, 15, 5, 5">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="0.8*"/>
@@ -130,7 +125,7 @@
                                Margin="0, 10, 6, 0">0</Label>
                     </Grid>
                 </GroupBox>
-                
+
             </StackPanel>
         </GroupBox>
         <Grid Grid.Column="1" Grid.Row="1">
@@ -148,7 +143,6 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="*"/>
-                    <!--<RowDefinition Height="*"/>-->
                 </Grid.RowDefinitions>
                 <Label>Потоков в работе:</Label>
                 <Label Grid.Column="1" x:Name="lbThreadsInWork"
@@ -163,7 +157,7 @@
                 <Label Grid.Row="2" Grid.Column="1"
                        x:Name="lbStartWorkingTime"
                        Foreground="Blue">00:00:00</Label>
-                
+
                 <Label Grid.Row="3"
                        Foreground="Blue">Время окончания работы:</Label>
                 <Label Grid.Row="3" Grid.Column="1"

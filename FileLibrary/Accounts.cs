@@ -1,10 +1,9 @@
 ﻿using InstaLog;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace FileLibrary
 {
@@ -12,47 +11,42 @@ namespace FileLibrary
     {
         private List<Dictionary<string, string>> _users;
         private List<string> _paths;
-        LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
         private const string path = @"\base\InstaLogins\";
         private int _filesCount;
         private int _currentPosition;
-
         private int _checkDelete;
+
+        LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
 
         public object[] locker = new object[1];
 
         #region PROPS
         public bool UsersReady { get; private set; }
+        public bool AllPathChecked { get; set; }
         public int CountUsers { get { return _users.Count(); } }
         public List<Dictionary<string, string>> Users { get { lock (locker) { return _users; } } }
 
         public List<string> UsersForDeleting { get; private set; }
-        private List<Dictionary<string, string>> _userAndHisFile;
         #endregion
 
         public Accounts()
         {
             UsersReady = false;
+            AllPathChecked = false;
             UsersForDeleting = new List<string>();
-            _userAndHisFile = new List<Dictionary<string, string>>();
             _users = new List<Dictionary<string, string>>();
             _paths = new List<string>();
         }
-
 
 
         public void GetAccountsFromBaseFile()
         {
             if (Directory.Exists(Environment.CurrentDirectory + path))
             {
-                var result = Directory.GetFiles(Environment.CurrentDirectory + path, "*.txt", SearchOption.AllDirectories);
-
-                List<Thread> threads = new List<Thread>();
-                _filesCount = result.Count();
-                for (int i = 0; i < _filesCount; i++)
-                {
-                    ThreadPool.QueueUserWorkItem(SetUser, result[i]);
-                }
+                _paths = Directory.GetFiles(Environment.CurrentDirectory + path, "*.txt", SearchOption.AllDirectories).ToList();
+                _filesCount = _paths.Count();
+                SetUser();
+                UsersReady = true;
             }
         }
 
@@ -61,17 +55,12 @@ namespace FileLibrary
         {
             foreach (var path in _paths)
             {
-                BackgroundWorker worker = new BackgroundWorker();
-                worker.DoWork += Delete_DoWork;
-                worker.RunWorkerAsync(path);
+                Task.Run(() => Delete_Run(path));
             }
-
         }
 
-        private void Delete_DoWork(object sender, DoWorkEventArgs e)
+        private void Delete_Run(string path)
         {
-            string path = (string)e.Argument;
-
             List<string> allUsersFromFile = File.ReadAllLines(path).ToList();
             bool check = false;
             lock (locker)
@@ -85,20 +74,34 @@ namespace FileLibrary
 
             _checkDelete++;
 
-            if (UsersForDeleting.Count >= 8000 && _checkDelete == _paths.Count)
+            if (UsersForDeleting.Count >= 3500 && _checkDelete == _paths.Count)
+            {
                 lock (locker)
                 {
+                    foreach (var user in UsersForDeleting)
+                    {
+                        string[] delUser = user.Split(':');
+                        Dictionary<string, string> tempDict = new Dictionary<string, string>();
+                        tempDict.Add("instaLogin", delUser[0]);
+                        tempDict.Add("instaPassword", delUser[1]);
+                        _users.Remove(tempDict);
+                    }
+
                     UsersForDeleting.Clear();
-                    _checkDelete = 0;
                 }
+                _checkDelete = 0;
+            }
 
             if (check)
                 File.WriteAllLines(path, allUsersFromFile);
         }
 
-        private void SetUser(object state)
+        public void SetUser()
         {
-            string filePath = (string)state;
+
+            if (AllPathChecked)
+                return;
+            string filePath = _paths[0];
             string[] str = File.ReadAllLines(filePath);
             _paths.Add(filePath);
 
@@ -110,7 +113,6 @@ namespace FileLibrary
                 Dictionary<string, string> saveUser = new Dictionary<string, string>();
                 saveUser["fileName"] = filePath;
                 saveUser["user"] = user;
-                _userAndHisFile.Add(saveUser);
                 try
                 {
                     string[] splitted = user.Split(':');
@@ -118,13 +120,15 @@ namespace FileLibrary
                     dict.Add("instaLogin", splitted[0]);
                     dict.Add("instaPassword", splitted[1]);
                     if (!(String.IsNullOrEmpty(splitted[0]) && String.IsNullOrEmpty(splitted[1])))
-                        _users.Add(dict);
+                        lock (locker)
+                            _users.Add(dict);
                 }
                 catch { }
             }
             _currentPosition++;
+            _paths.Remove(_paths[0]);
             if (_filesCount == _currentPosition)
-                UsersReady = true;
+                AllPathChecked = true;
 
             string[] fileName = filePath.Split('\\');
             logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"file {fileName[fileName.Count() - 1]} returned {str.Count()} accounts", Method = "Account.SetUser" });

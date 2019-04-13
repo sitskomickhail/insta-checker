@@ -1,0 +1,11 @@
+E:\Projects\Instagram-Checker\InstagramLibrary\bin\Release\InstagramLibrary.dll.config
+E:\Projects\Instagram-Checker\InstagramLibrary\bin\Release\InstagramLibrary.dll
+E:\Projects\Instagram-Checker\InstagramLibrary\bin\Release\InstagramLibrary.pdb
+E:\Projects\Instagram-Checker\InstagramLibrary\bin\Release\InstaLog.dll
+E:\Projects\Instagram-Checker\InstagramLibrary\bin\Release\Newtonsoft.Json.dll
+E:\Projects\Instagram-Checker\InstagramLibrary\bin\Release\InstaLog.pdb
+E:\Projects\Instagram-Checker\InstagramLibrary\bin\Release\Newtonsoft.Json.pdb
+E:\Projects\Instagram-Checker\InstagramLibrary\bin\Release\Newtonsoft.Json.xml
+E:\Projects\Instagram-Checker\InstagramLibrary\obj\Release\InstagramLibrary.csprojResolveAssemblyReference.cache
+E:\Projects\Instagram-Checker\InstagramLibrary\obj\Release\InstagramLibrary.dll
+E:\Projects\Instagram-Checker\InstagramLibrary\obj\Release\InstagramLibrary.pdb

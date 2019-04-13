@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Collections.Generic;
 using System.IO;
 using System.Configuration;
+using System.Threading.Tasks;
 
 namespace Instagram_Checker
 {
@@ -44,7 +45,6 @@ namespace Instagram_Checker
                 btnLoad.IsEnabled = false;
                 btnProxyOptions.IsEnabled = false;
                 btnStart.IsEnabled = false;
-                numcAccsInThread.IsEnabled = false;
                 numcDelay.IsEnabled = false;
                 numcDelayMail.IsEnabled = false;
                 numcThreads.IsEnabled = false;
@@ -78,11 +78,8 @@ namespace Instagram_Checker
         private void btnLoad_Click(object sender, RoutedEventArgs e)
         {
             _model = new Model();
-
-            int threadsCount = numcThreads.Value;
-            int splitCount = numcAccsInThread.Value;
-
-            if (threadsCount > 0 && splitCount > 0)
+            
+            if (numcThreads.Value > 0)
             {
                 if (_proxyWindow == null)
                     _proxyWindow = new ProxyOptionWindow();
@@ -91,21 +88,15 @@ namespace Instagram_Checker
                 if (File.Exists("Log.log")) File.Delete("Log.log");
                 if (File.Exists("EasyLog.log")) File.Delete("EasyLog.log");
 
-                BackgroundWorker controlWorker = new BackgroundWorker();
-                controlWorker.DoWork += ControlWorker_DoWork;
-                controlWorker.RunWorkerAsync();
+
+                Task.Run(() => ControlWorker_Run());
 
                 btnLoad.IsEnabled = false;
                 logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Start check info", UserName = null });
 
                 _model.InitProxy((bool)cbApiProxy.IsChecked ? true : false, _proxyWindow.AllLinks); //List<strings>
-
-                int[] obj = new int[2] { threadsCount, splitCount };
-
-                BackgroundWorker worker = new BackgroundWorker();
-                worker.DoWork += Load_DoWork;
-                worker.RunWorkerCompleted += Load_RunWorkerCompleted;
-                worker.RunWorkerAsync(obj);
+                
+                Task.Run(() => Load_Run());
             }
             else
                 MessageBox.Show("Количество потоков или аккаунтов \nв потоке не может быть меньше 1", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -134,20 +125,10 @@ namespace Instagram_Checker
                     second = $"0{DateTime.Now.Second}";
 
                 lbStartWorkingTime.Content = $"{hour}:{minute}:{second}";
-                object[] objs = new object[1] { numcDelay.Value };
 
-                BackgroundWorker worker = new BackgroundWorker();
-                worker.DoWork += Start_DoWork;
-                worker.RunWorkerCompleted += Start_RunWorkerCompleted;
-                worker.RunWorkerAsync(objs);
-
-                BackgroundWorker gridWorker = new BackgroundWorker();
-                gridWorker.DoWork += GridWorker_DoWork;
-                gridWorker.RunWorkerAsync();
-
-                BackgroundWorker controlWorker = new BackgroundWorker();
-                controlWorker.DoWork += ControlWorker_DoWork;
-                controlWorker.RunWorkerAsync();
+                int countThreads = numcThreads.Value;
+                Task.Run(() => Start_Run(countThreads));
+                Task.Run(() => GridWorker_Run());
             }
             else
                 MessageBox.Show("Задержка не может быть отрицательным числом\nПожалуйста измените её значение", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -184,7 +165,7 @@ namespace Instagram_Checker
 
 
 
-        private void ControlWorker_DoWork(object sender, DoWorkEventArgs e)
+        private void ControlWorker_Run()
         {
             while (!_model.IsProgramComplitlyEnded)
             {
@@ -192,22 +173,18 @@ namespace Instagram_Checker
                 {
                     lbThreadsInWork.Content = Process.GetCurrentProcess().Threads.Count.ToString();
                 });
-                Thread.Sleep(1000);
                 Dispatcher?.Invoke(() =>
                 {
                     lbAllAccountsSwitched.Content = _model.AccsSwitched.ToString();
                 });
-                Thread.Sleep(1000);
                 Dispatcher?.Invoke(() =>
                 {
                     lbProxyUsed.Content = _model.ProxySwitched.ToString();
                 });
-                Thread.Sleep(500);
                 Dispatcher?.Invoke(() =>
                 {
                     lbBlockedProxy.Content = _model.ProxyBlocked.ToString();
                 });
-                Thread.Sleep(500);
                 Dispatcher?.Invoke(() =>
                 {
                     lbBlockedAccs.Content = _model.AccsBlocked.ToString();
@@ -215,7 +192,7 @@ namespace Instagram_Checker
             }
         }
 
-        private void GridWorker_DoWork(object sender, DoWorkEventArgs e)
+        private void GridWorker_Run()
         {
             int pos = 1;
 
@@ -263,13 +240,9 @@ namespace Instagram_Checker
             MessageBox.Show("Аккаунты успешно проверены", "Success", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK);
         }
 
-        private void Start_DoWork(object sender, DoWorkEventArgs e)
+        private void Start_Run(int countThreads)
         {
-            object[] objs = (object[])e.Argument;
-
-            int delay = (int)objs[0];
-
-            _model.CheckAllAccounts(delay);
+            _model.CheckAllAccounts(countThreads);
             DateTime time = DateTime.Now;
 
             while (!_model.IsProgramComplitlyEnded)
@@ -280,9 +253,7 @@ namespace Instagram_Checker
                     time = DateTime.Now;
                 }
             }
-        }
-        private void Start_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
+
             string hour = DateTime.Now.Hour.ToString(), minute = DateTime.Now.Minute.ToString(), second = DateTime.Now.Second.ToString();
             if (DateTime.Now.Hour < 10)
                 hour = $"0{DateTime.Now.Hour}";
@@ -296,16 +267,9 @@ namespace Instagram_Checker
             btnLoad.IsEnabled = true;
             btnProxyOptions.IsEnabled = true;
         }
-
-        private void Load_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        
+        private void Load_Run()
         {
-            btnStart.IsEnabled = true;
-        }
-        private void Load_DoWork(object sender, DoWorkEventArgs e)
-        {
-            int threadsCount = ((int[])e.Argument)[0];
-            int splitCount = ((int[])e.Argument)[1];
-
             _model.InitAccounts();
             _model.InitAccountsMail();
             _model.InitAgents();
@@ -318,7 +282,7 @@ namespace Instagram_Checker
             {
                 if (_model.IsAccountInited && countAcc == 0)
                 {
-                    logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready ({_model.GetAccounts.CountUsers})", UserName = null });
+                    logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready. Первый файл вернул {_model.GetAccounts.CountUsers} аккаунтов", UserName = null });
                     countAcc++;
                 }
 
@@ -353,11 +317,11 @@ namespace Instagram_Checker
             else if (countAgents == 0)
                 logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Agents are ready ({_model.GetUserAgents.CountAgents})", UserName = null });
 
-            _model.InitObjects(threadsCount, splitCount);
-            logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Определяем точное количество потоков...", UserName = null });
-
-            while (!_model.IsObjectsReady) { }
-            logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Objects are resolved", UserName = null });
+            logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Програма готова к запуску.\nВыставьте количество потоков, а также задержку", UserName = null });
+            Dispatcher.Invoke(() =>
+            {
+                btnStart.IsEnabled = true;
+            });
 
         }
 

@@ -1,12 +1,11 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using InstaLog;
-using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace FileLibrary
 {
@@ -53,9 +52,7 @@ namespace FileLibrary
                     continue;
                 }
 
-                BackgroundWorker worker = new BackgroundWorker();
-                worker.DoWork += AWMProxySetter_DoWork;
-                worker.RunWorkerAsync(href);
+                Task.Run(() => AWMProxySetter_DoWork(href));
             }
         }
         
@@ -204,11 +201,9 @@ namespace FileLibrary
 
         #region BACKGROUND
         private int _linksUsed;
-        private void AWMProxySetter_DoWork(object sender, DoWorkEventArgs e)
+        private void AWMProxySetter_DoWork(string href)
         {
-            string link = (string)e.Argument;
-
-            HttpWebRequest webRequest = WebRequest.Create($"{link}") as HttpWebRequest;
+            HttpWebRequest webRequest = WebRequest.Create($"{href}") as HttpWebRequest;
             if (webRequest == null)
 
                 webRequest.ContentType = "text/plain;charset=UTF-8";

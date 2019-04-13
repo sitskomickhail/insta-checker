@@ -1,0 +1,4 @@
+E:\Projects\Instagram-Checker\InstaLog\bin\Release\InstaLog.dll
+E:\Projects\Instagram-Checker\InstaLog\bin\Release\InstaLog.pdb
+E:\Projects\Instagram-Checker\InstaLog\obj\Release\InstaLog.dll
+E:\Projects\Instagram-Checker\InstaLog\obj\Release\InstaLog.pdb

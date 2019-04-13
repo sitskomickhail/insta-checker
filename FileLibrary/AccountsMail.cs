@@ -1,10 +1,10 @@
 ﻿using InstaLog;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace FileLibrary
 {
@@ -12,7 +12,7 @@ namespace FileLibrary
     {
         private List<Dictionary<string, string>> _mails;
         private List<string> _paths;
-        
+
         LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
         private const string path = @"\base\Mails\";
         private int _filesCount;
@@ -46,20 +46,16 @@ namespace FileLibrary
 
                 List<Thread> threads = new List<Thread>();
                 _filesCount = result.Count();
-                for (int i = 0; i < _filesCount; i++)
+
+                foreach (string path in result)
                 {
-                    BackgroundWorker worker = new BackgroundWorker();
-                    worker.DoWork += SetMail_DoWork;
-                    worker.RunWorkerCompleted += SetMail_RunWorkerCompleted;
-                    worker.RunWorkerAsync(result[i]);
-                    //ThreadPool.QueueUserWorkItem(SetMail, result[i]);
+                    Task.Run(() => SetMail_Run(path));
                 }
             }
         }
 
-        private void SetMail_DoWork(object sender, DoWorkEventArgs e)
+        private void SetMail_Run(string filePath)
         {
-            string filePath = (string)e.Argument;
             string[] str = File.ReadAllLines(filePath);
 
             _paths.Add(filePath);
@@ -81,31 +77,26 @@ namespace FileLibrary
                 catch { }
             }
 
+            _currentPosition++;
+            if (_filesCount == _currentPosition)
+                MailsReady = true;
+
             string[] fileName = filePath.Split('\\');
             logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"file {fileName[fileName.Count() - 1]} returned {str.Count()} mails", Method = "AccMails.SetMails" });
             _currentPosition++;
-        }
-        private void SetMail_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (_filesCount == _currentPosition)
-                MailsReady = true;
         }
 
         public void DeleteMailFromFile()
         {
             foreach (var path in _paths)
             {
-                BackgroundWorker worker = new BackgroundWorker();
-                worker.DoWork += MailDeleter_DoWork;
-                worker.RunWorkerAsync(path);
+                Task.Run(() => MailDeleter_Run(path));
             }
         }
 
 
-        private void MailDeleter_DoWork(object sender, DoWorkEventArgs e)
+        private void MailDeleter_Run(string path)
         {
-            string path = (string)e.Argument;
-
             List<string> allUsersFromFile = File.ReadAllLines(path).ToList();
             bool check = false;
             lock (locker)
@@ -116,9 +107,9 @@ namespace FileLibrary
                     allUsersFromFile.Remove(user);
                 }
             }
-            
+
             if (check)
                 File.WriteAllLines(path, allUsersFromFile);
-        }        
+        }
     }
 }
