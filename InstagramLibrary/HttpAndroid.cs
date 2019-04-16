@@ -41,7 +41,7 @@ namespace InstagramLibrary
             {
                 if (_proxy == null)
                 {
-                    logging.Invoke(LogIO.mainLog, new Log()
+                    lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log()
                     {
                         Date = DateTime.Now,
                         LogMessage = $"Hе объявлен порт или айпи адрес: {ex.Message}",
@@ -56,8 +56,8 @@ namespace InstagramLibrary
 
         public async Task<LoginResult> LogIn()
         {
-            if (Username == "randommail@tut.by")
-                Console.WriteLine();
+            Debug.WriteLine("Login");
+            bool GZip = false;
 
             for (int i = 0; i < 5; i++)
             {
@@ -69,13 +69,15 @@ namespace InstagramLibrary
                     bootstrapRequest.Headers["Upgrade-Insecure-Requests"] = "1";
                     using (var bootstrapResponse = await bootstrapRequest.GetResponseAsync() as HttpWebResponse)
                     {
+                        if (bootstrapResponse.Cookies.Count == 0)
+                            continue;
                         mCoockieC.Add(bootstrapResponse.Cookies);
                     }
                 }
                 catch (Exception bex)
                 {
                     Debug.WriteLine("Bootstrap progress meet exception " + bex.Message);
-                    throw bex;
+                    throw bex; //Status==ConnectFailure
                 }
                 try
                 {
@@ -117,28 +119,58 @@ namespace InstagramLibrary
                             response = (HttpWebResponse)e.Response;
                         }
 
-                        using (Stream dataS = response.GetResponseStream())
-                        using (var streamReader = new StreamReader(dataS))
+                        string responseData;
+
+                        //GZip convert
+                        if (GZip)
+                            using (Stream dataS = response.GetResponseStream())
+                            using (var gzipStream = new GZipStream(dataS, CompressionMode.Decompress))
+                            using (var streamReader = new StreamReader(dataS))
+                                responseData = streamReader.ReadToEnd();
+                        else
                         {
-                            string responseData = streamReader.ReadToEnd();
-                            mCoockieC.Add(response.Cookies);
+                            using (Stream dataS = response.GetResponseStream())
+                            using (var streamReader = new StreamReader(dataS))
+                                responseData = streamReader.ReadToEnd();
 
-                            if (responseData == "Request Timeout")
-                                return new LoginResult() { status = responseData };
+                            if (responseData.Contains("0"))
+                            {
+                                GZip = true;
+                                continue;
+                            }
+                        }
 
+                        mCoockieC.Add(response.Cookies);
+
+                        if (responseData == "Request Timeout")
+                            return new LoginResult() { status = responseData };
+
+                        if (GZip)
+                        {
                             try
                             {
-                                RootobjectChallenge result = JsonConvert.DeserializeObject<RootobjectChallenge>(responseData);
-                                if (result.message == "checkpoint_required")
-                                {
-                                    return new LoginResult() { status = "checkpoint_required" };
-                                }
-                                return new LoginResult() { status = "ok" };
+                                LoginResult result = JsonConvert.DeserializeObject<LoginResult>(responseData);
+                                if (result.authenticated == true)
+                                    return new LoginResult() { status = "success" };
+                                else
+                                    return new LoginResult() { status = "ok" };
                             }
-                            catch
+                            catch { return new LoginResult() { status = "success" }; }
+                        }
+
+                        try
+                        {
+
+                            RootobjectChallenge result = JsonConvert.DeserializeObject<RootobjectChallenge>(responseData);
+                            if (result.message == "checkpoint_required")
                             {
-                                return new LoginResult() { status = "success" };
+                                return new LoginResult() { status = "checkpoint_required" };
                             }
+                            return new LoginResult() { status = "ok" };
+                        }
+                        catch
+                        {
+                            return new LoginResult() { status = "ok" };
                         }
                     }
                 }
@@ -182,7 +214,7 @@ namespace InstagramLibrary
                 catch (Exception ex)
                 {
                     Debug.WriteLine("GetProfile progress occur exception " + ex.Message);
-                    logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception! {ex.Message}", Method = "HttpAndroid.GetProfile" });
+                    lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception! {ex.Message}", Method = "HttpAndroid.GetProfile" });
                     mCoockieC = reserve;
                     continue;
                 }
@@ -207,7 +239,7 @@ namespace InstagramLibrary
                 catch (Exception ex)
                 {
                     Debug.WriteLine(ex.Message);
-                    logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"{ex.Message}", Method = "HttpAndroid.LogIn" });
+                    lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"{ex.Message}", Method = "HttpAndroid.LogIn" });
                     throw;
                 }
                 try
@@ -254,7 +286,7 @@ namespace InstagramLibrary
                     // and obviously exception will occur. In this case, just return false
                     exeption = ex;
                     Debug.WriteLine("UpdateProfile progress occur exception " + ex.Message);
-                    logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception! {ex.Message}", Method = "HttpAndroid.UpdateProfile" });
+                    lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception! {ex.Message}", Method = "HttpAndroid.UpdateProfile" });
                     mCoockieC = reserve;
                     continue;
                 }
@@ -352,7 +384,7 @@ namespace InstagramLibrary
                 catch (Exception bex)
                 {
                     Debug.WriteLine("Bootstrap progress meet exception " + bex.Message);
-                    logging.Invoke(LogIO.mainLog, new Log()
+                    lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log()
                     {
                         UserName = null,
                         Date = DateTime.Now,

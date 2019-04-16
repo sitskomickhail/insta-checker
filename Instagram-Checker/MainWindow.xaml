@@ -57,7 +57,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <Numeric:Numeric_UpDown x:Name="numcThreads" Margin="5"
-                                                Value="500"/>
+                                                Value="320"/>
                         <Label Grid.Column="1" Padding="18, 5, 0, 0">
                             <TextBlock TextWrapping="Wrap" Text="Количество потоков" FontSize="10"
                                        Padding="2"></TextBlock>

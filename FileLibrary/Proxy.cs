@@ -25,7 +25,7 @@ namespace FileLibrary
         #region PROPS
         public List<Dictionary<string, object>> InstaProxies { get { lock (locker) { return _insta_proxies; } } }
         public List<Dictionary<string, object>> MailProxies { get { lock (locker) { return _mail_proxies; } } }
-        public bool IsProxyReady { get; private set; }
+        public bool IsProxyReady { get; set; }
         #endregion
 
         public Proxy()
@@ -47,7 +47,7 @@ namespace FileLibrary
             {
                 if (String.IsNullOrWhiteSpace(href))
                 {
-                    logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Link doesn't exist", Method = "Proxy.GetRefProxy" });
+                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Link doesn't exist", Method = "Proxy.GetRefProxy" });
                     _countLinks--;
                     continue;
                 }
@@ -85,11 +85,11 @@ namespace FileLibrary
                     }
                     catch { }
                 }
-                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Insta.txt returned {count} proxies", Method = "Proxy.InstaProxy_Init" });
+                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Insta.txt returned {count} proxies", Method = "Proxy.InstaProxy_Init" });
             }
             else
             {
-                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Insta.txt doesn't exist", Method = "Proxy.InstaProxy_Init" });
+                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Insta.txt doesn't exist", Method = "Proxy.InstaProxy_Init" });
                 return false;
             }
             return true;
@@ -124,11 +124,11 @@ namespace FileLibrary
                     }
                     catch { }
                 }
-                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Mail.txt returned {count} proxies", Method = "Proxy.MailProxy_Init" });
+                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Mail.txt returned {count} proxies", Method = "Proxy.MailProxy_Init" });
             }
             else
             {
-                logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Mail.txt doesn't exist", Method = "Proxy.MailProxy_Init" });
+                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Mail.txt doesn't exist", Method = "Proxy.MailProxy_Init" });
                 return false;
             }
             return true;
@@ -150,6 +150,7 @@ namespace FileLibrary
                     string[] proxy = File.ReadAllLines(file);
                     for (int i = 0; i < proxy.Count(); i++)
                     {
+                        proxy[i] = proxy[i].Replace(" ", String.Empty);
                         string[] splited = proxy[i].Split(':');
 
                         Dictionary<string, object> dict = new Dictionary<string, object>();
@@ -180,8 +181,11 @@ namespace FileLibrary
                         catch { }
                     }
                     string[] fileName = file.Split('\\');
-                    logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $@"file \base\{fileName[fileName.Count() - 1]} returned {count} proxies", Method = "Proxy.GetBase" });
+                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $@"file \base\{fileName[fileName.Count() - 1]} returned {count} proxies", Method = "Proxy.GetBase" });
                 }
+
+                if (_countLinks == 0)
+                    IsProxyReady = true;
             }
         }
 

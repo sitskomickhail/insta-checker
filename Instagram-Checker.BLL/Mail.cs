@@ -20,14 +20,14 @@ namespace Instagram_Checker.BLL
             random = new Random();
             r = Randomer.Next(0, 1000000);
             ic = new ImapClient("imap.mail.ru", login, password, AuthMethods.Login, 993, true, true);
-            logging.Invoke("MailLog.log", new Log() { UserName = $"{login}:{password}", Date = DateTime.Now,
+            lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = $"{login}:{password}", Date = DateTime.Now,
                 LogMessage = $"{ic.IsAuthenticated} + {ic.IsConnected}", Method = "Mail.Ctor"});
             Thread.Sleep(1000);
         }
 
         public string GetMailPath(DateTime dt)
         {
-            logging.Invoke(LogIO.mainLog, new Log()
+            lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log()
             {
                 UserName = null,
                 Date = DateTime.Now,
@@ -49,14 +49,14 @@ namespace Instagram_Checker.BLL
                 {
                     MailMessage message = ic.GetMessage(mm[mm.Length - 1].Uid);
                     Thread.Sleep(1000);
-                    logging.Invoke(LogIO.easyPath, new Log()
+                    lock(LogIO.locker) logging.Invoke(LogIO.easyPath, new Log()
                     {
                         UserName = null,
                         Date = DateTime.Now,
                         LogMessage = $"Getting messages",
                         Method = "Mail.GetMailPath"
                     });
-                    logging.Invoke(LogIO.mainLog, new Log()
+                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log()
                     {
                         UserName = null,
                         Date = DateTime.Now,
@@ -70,7 +70,7 @@ namespace Instagram_Checker.BLL
                     StreamWriter file = new StreamWriter(path);
                     file.Write(message.Body);
                     file.Close();
-                    logging.Invoke(LogIO.mainLog, new Log()
+                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log()
                     {
                         UserName = null,
                         Date = DateTime.Now,
@@ -82,7 +82,7 @@ namespace Instagram_Checker.BLL
                     HtmlWeb web = new HtmlWeb();
 
                     HtmlDocument doc = web.Load(Environment.CurrentDirectory + @"\" + path);
-                    logging.Invoke("MailLog.log", new Log()
+                    lock(LogIO.locker) logging.Invoke("MailLog.log", new Log()
                     {
                         UserName = null,
                         Date = DateTime.Now,
@@ -92,7 +92,7 @@ namespace Instagram_Checker.BLL
                     var nodes = doc.DocumentNode.SelectNodes("//a");
                     string result = nodes[0].GetAttributeValue("href", null);
                     Thread.Sleep(1000);
-                    logging.Invoke(LogIO.mainLog, new Log()
+                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log()
                     {
                         UserName = null,
                         Date = DateTime.Now,
@@ -101,7 +101,7 @@ namespace Instagram_Checker.BLL
                     });
 
                     File.Delete(path);
-                    logging.Invoke(LogIO.mainLog, new Log()
+                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log()
                     {
                         UserName = null,
                         Date = DateTime.Now,
@@ -112,7 +112,7 @@ namespace Instagram_Checker.BLL
 
                     if (result.Contains("https://instagram.com/accounts/confirm_email/"))
                     {
-                        logging.Invoke(LogIO.mainLog, new Log()
+                        lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log()
                         {
                             UserName = null,
                             Date = DateTime.Now,
@@ -124,14 +124,14 @@ namespace Instagram_Checker.BLL
                     else
                     {
                         length++;
-                        logging.Invoke(LogIO.mainLog, new Log()
+                        lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log()
                         {
                             UserName = null,
                             Date = DateTime.Now,
                             LogMessage = $"{length - 1} message not correct",
                             Method = "Mail.GetMailPath"
                         });
-                        logging.Invoke(LogIO.easyPath, new Log()
+                        lock(LogIO.locker) logging.Invoke(LogIO.easyPath, new Log()
                         {
                             UserName = null,
                             Date = DateTime.Now,

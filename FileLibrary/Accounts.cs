@@ -11,6 +11,7 @@ namespace FileLibrary
     {
         private List<Dictionary<string, string>> _users;
         private List<string> _paths;
+        private List<string> _all_paths;
         private const string path = @"\base\InstaLogins\";
         private int _filesCount;
         private int _currentPosition;
@@ -36,6 +37,7 @@ namespace FileLibrary
             UsersForDeleting = new List<string>();
             _users = new List<Dictionary<string, string>>();
             _paths = new List<string>();
+            _all_paths = new List<string>();
         }
 
 
@@ -44,6 +46,7 @@ namespace FileLibrary
             if (Directory.Exists(Environment.CurrentDirectory + path))
             {
                 _paths = Directory.GetFiles(Environment.CurrentDirectory + path, "*.txt", SearchOption.AllDirectories).ToList();
+                
                 _filesCount = _paths.Count();
                 SetUser();
                 UsersReady = true;
@@ -53,7 +56,7 @@ namespace FileLibrary
 
         public void DeleteAccountsFromFile()
         {
-            foreach (var path in _paths)
+            foreach (var path in _all_paths)
             {
                 Task.Run(() => Delete_Run(path));
             }
@@ -98,13 +101,11 @@ namespace FileLibrary
 
         public void SetUser()
         {
-
             if (AllPathChecked)
                 return;
             string filePath = _paths[0];
             string[] str = File.ReadAllLines(filePath);
-            _paths.Add(filePath);
-
+            _all_paths.Add(filePath);
             foreach (string user in str)
             {
                 if (String.IsNullOrEmpty(user))
@@ -131,7 +132,7 @@ namespace FileLibrary
                 AllPathChecked = true;
 
             string[] fileName = filePath.Split('\\');
-            logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"file {fileName[fileName.Count() - 1]} returned {str.Count()} accounts", Method = "Account.SetUser" });
+           lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"file {fileName[fileName.Count() - 1]} returned {str.Count()} accounts", Method = "Account.SetUser" });
         }
     }
 }

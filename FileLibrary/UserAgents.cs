@@ -62,7 +62,7 @@ namespace FileLibrary
                 AgentsReady = true;
 
             string[] fileName = filePath.Split('\\');
-            logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"file {fileName[fileName.Count() - 1]} returned {str.Count()} Agents", Method = "UserAgent.SetUser" });
+            lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"file {fileName[fileName.Count() - 1]} returned {str.Count()} Agents", Method = "UserAgent.SetUser" });
         }
 
 
