@@ -88,6 +88,7 @@ namespace FileLibrary
 
         public void DeleteMailFromFile()
         {
+            logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, LogMessage = $"Start delete mails. Count paths = {_paths.Count}", Method = "DeleteMailFromFile" });
             foreach (var path in _paths)
             {
                 Task.Run(() => MailDeleter_Run(path));
@@ -97,7 +98,8 @@ namespace FileLibrary
 
         private void MailDeleter_Run(string path)
         {
-            List<string> allUsersFromFile = File.ReadAllLines(path).ToList();
+            List<string> allUsersFromFile;
+            lock(locker) allUsersFromFile = File.ReadAllLines(path).ToList();
             bool check = false;
             lock (locker)
             {
@@ -107,9 +109,8 @@ namespace FileLibrary
                     allUsersFromFile.Remove(user);
                 }
             }
-
             if (check)
-                File.WriteAllLines(path, allUsersFromFile);
+                lock(locker) File.WriteAllLines(path, allUsersFromFile);
         }
     }
 }

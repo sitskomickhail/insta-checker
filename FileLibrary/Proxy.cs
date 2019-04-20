@@ -20,7 +20,7 @@ namespace FileLibrary
 
         private int _countLinks;
         public object[] locker = new object[1];
-        
+
 
         #region PROPS
         public List<Dictionary<string, object>> InstaProxies { get { lock (locker) { return _insta_proxies; } } }
@@ -47,7 +47,7 @@ namespace FileLibrary
             {
                 if (String.IsNullOrWhiteSpace(href))
                 {
-                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Link doesn't exist", Method = "Proxy.GetRefProxy" });
+                    lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Link doesn't exist", Method = "Proxy.GetRefProxy" });
                     _countLinks--;
                     continue;
                 }
@@ -55,7 +55,7 @@ namespace FileLibrary
                 Task.Run(() => AWMProxySetter_DoWork(href));
             }
         }
-        
+
         public bool InstaProxy_Init()
         {
             var time = DateTime.Now;
@@ -85,11 +85,11 @@ namespace FileLibrary
                     }
                     catch { }
                 }
-                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Insta.txt returned {count} proxies", Method = "Proxy.InstaProxy_Init" });
+                lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Insta.txt returned {count} proxies", Method = "Proxy.InstaProxy_Init" });
             }
             else
             {
-                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Insta.txt doesn't exist", Method = "Proxy.InstaProxy_Init" });
+                lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Insta.txt doesn't exist", Method = "Proxy.InstaProxy_Init" });
                 return false;
             }
             return true;
@@ -124,11 +124,11 @@ namespace FileLibrary
                     }
                     catch { }
                 }
-                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Mail.txt returned {count} proxies", Method = "Proxy.MailProxy_Init" });
+                lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Proxy_Mail.txt returned {count} proxies", Method = "Proxy.MailProxy_Init" });
             }
             else
             {
-                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Mail.txt doesn't exist", Method = "Proxy.MailProxy_Init" });
+                lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = "Proxy_Mail.txt doesn't exist", Method = "Proxy.MailProxy_Init" });
                 return false;
             }
             return true;
@@ -181,7 +181,7 @@ namespace FileLibrary
                         catch { }
                     }
                     string[] fileName = file.Split('\\');
-                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $@"file \base\{fileName[fileName.Count() - 1]} returned {count} proxies", Method = "Proxy.GetBase" });
+                    lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $@"file \base\{fileName[fileName.Count() - 1]} returned {count} proxies", Method = "Proxy.GetBase" });
                 }
 
                 if (_countLinks == 0)
@@ -221,22 +221,22 @@ namespace FileLibrary
                     parsed = contributorsAsJson.Split('\n').ToList();
                 }
             }
-
-            bool check = true;
-            foreach (var proxyUri in parsed)
+            
+            for (int i = 0; i < parsed.Count; i++)
             {
-                string[] proxy = proxyUri.Split(':');
+                string[] proxy = parsed[i].Split(':');
 
-                Dictionary<string, object> prxInst = new Dictionary<string, object>();
-                prxInst.Add("ip", proxy[0]);
-                prxInst.Add("port", Int32.Parse(proxy[1]));
+                try
+                {
+                    Dictionary<string, object> prxInst = new Dictionary<string, object>();
+                    prxInst.Add("ip", proxy[0]);
+                    prxInst.Add("port", Int32.Parse(proxy[1]));
 
-                if (check)
                     _insta_proxies.Add(prxInst);
-                else
-                    _mail_proxies.Add(prxInst);
+                }
+                catch { }
             }
-
+            
             _linksUsed++;
             if (_linksUsed == _countLinks)
             {

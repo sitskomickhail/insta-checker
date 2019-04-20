@@ -170,7 +170,7 @@ namespace Instagram_Checker
         {
             while (!_model.IsProgramComplitlyEnded)
             {
-                Thread.Sleep(55);
+                Thread.Sleep(15);
                 Dispatcher?.Invoke(() =>
                 {
                     lbThreadsInWork.Content = Process.GetCurrentProcess().Threads.Count.ToString();

@@ -8,3 +8,15 @@ E:\Projects\Instagram-Checker\FileLibrary\bin\Debug\Newtonsoft.Json.pdb
 E:\Projects\Instagram-Checker\FileLibrary\bin\Debug\Newtonsoft.Json.xml
 E:\Projects\Instagram-Checker\FileLibrary\bin\Debug\InstaLog.dll
 E:\Projects\Instagram-Checker\FileLibrary\bin\Debug\InstaLog.pdb
+E:\Projects\insta-checker\FileLibrary\bin\Debug\FileLibrary.dll
+E:\Projects\insta-checker\FileLibrary\bin\Debug\FileLibrary.pdb
+E:\Projects\insta-checker\FileLibrary\bin\Debug\InstaLog.dll
+E:\Projects\insta-checker\FileLibrary\bin\Debug\Newtonsoft.Json.dll
+E:\Projects\insta-checker\FileLibrary\bin\Debug\InstaLog.pdb
+E:\Projects\insta-checker\FileLibrary\bin\Debug\Newtonsoft.Json.pdb
+E:\Projects\insta-checker\FileLibrary\bin\Debug\Newtonsoft.Json.xml
+E:\Projects\insta-checker\FileLibrary\obj\Debug\FileLibrary.csprojAssemblyReference.cache
+E:\Projects\insta-checker\FileLibrary\obj\Debug\FileLibrary.csproj.CoreCompileInputs.cache
+E:\Projects\insta-checker\FileLibrary\obj\Debug\FileLibrary.csproj.CopyComplete
+E:\Projects\insta-checker\FileLibrary\obj\Debug\FileLibrary.dll
+E:\Projects\insta-checker\FileLibrary\obj\Debug\FileLibrary.pdb

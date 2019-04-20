@@ -3,3 +3,9 @@ E:\Projects\Instagram-Checker\InstaLog\bin\Debug\InstaLog.pdb
 E:\Projects\Instagram-Checker\InstaLog\obj\Debug\InstaLog.csprojResolveAssemblyReference.cache
 E:\Projects\Instagram-Checker\InstaLog\obj\Debug\InstaLog.dll
 E:\Projects\Instagram-Checker\InstaLog\obj\Debug\InstaLog.pdb
+E:\Projects\insta-checker\InstaLog\bin\Debug\InstaLog.dll
+E:\Projects\insta-checker\InstaLog\bin\Debug\InstaLog.pdb
+E:\Projects\insta-checker\InstaLog\obj\Debug\InstaLog.csprojAssemblyReference.cache
+E:\Projects\insta-checker\InstaLog\obj\Debug\InstaLog.csproj.CoreCompileInputs.cache
+E:\Projects\insta-checker\InstaLog\obj\Debug\InstaLog.dll
+E:\Projects\insta-checker\InstaLog\obj\Debug\InstaLog.pdb

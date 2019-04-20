@@ -90,7 +90,7 @@ namespace InstagramLibrary
                     request.Referer = "https://www.instagram.com/accounts/login/";
                     request.ContentType = "application/x-www-form-urlencoded";
                     request.ContentLength = content.Length;
-                    request.KeepAlive = false;
+                    request.KeepAlive = true;
                     request.Headers["Accept-Encoding"] = "gzip, deflate, br";
                     request.Headers["Accept-Language"] = "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7";
 
@@ -177,7 +177,7 @@ namespace InstagramLibrary
                 catch (Exception ex)
                 {
                     Debug.WriteLine("Login progress occur exception " + ex.Message);
-                    logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception! {ex.Message}", Method = "HttpAndroid.LogIn" });
+                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception! {ex.Message}", Method = "HttpAndroid.LogIn" });
                     mCoockieC = new CookieContainer();
 
                     continue;
@@ -249,7 +249,7 @@ namespace InstagramLibrary
                     request.Referer = "https://www.instagram.com/accounts/edit/";
                     request.ContentType = "application/x-www-form-urlencoded";
                     request.ContentLength = content.Length;
-                    request.KeepAlive = false;
+                    request.KeepAlive = true;
                     request.Headers["Origin"] = "https://www.instagram.com";
 
                     // maybe exception if mCookieC not contain csrftoken
@@ -307,7 +307,7 @@ namespace InstagramLibrary
                 request.Referer = "https://www.instagram.com/accounts/password/change/?hl=ru";
                 request.ContentType = "application/x-www-form-urlencoded";
                 request.ContentLength = content.Length;
-                request.KeepAlive = false;
+                request.KeepAlive = true;
                 request.Headers["Origin"] = "https://www.instagram.com";
                 // maybe exception if mCookieC not contain csrftoken
                 request.Headers["X-CSRFToken"] = mCoockieC.GetCookies(new Uri("https://www.instagram.com"))["csrftoken"].Value;
