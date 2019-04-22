@@ -62,15 +62,14 @@ namespace FileLibrary
                     check = true;
                     allUsersFromFile.Remove(user);
                 }
-            }
-            logging.Invoke(LogIO.mainLog, new Log() { Method = "Account.Delete_Run", Date = DateTime.Now, LogMessage = $"Users removed - {usersCount - allUsersFromFile.Count}", UserName = path });
 
-            _checkDelete++;
-            if (_checkDelete == _all_paths.Count)
-            {
-                logging.Invoke(LogIO.mainLog, new Log() { Method = "Account.Delete_Run", Date = DateTime.Now, LogMessage = "Deleting users from UsersForDeleting", UserName = path });
-                lock (locker)
+                logging.Invoke(LogIO.mainLog, new Log() { Method = "Account.Delete_Run", Date = DateTime.Now, LogMessage = $"Users removed - {usersCount - allUsersFromFile.Count}", UserName = path });
+
+                _checkDelete++;
+                if (_checkDelete == _all_paths.Count)
                 {
+                    logging.Invoke(LogIO.mainLog, new Log() { Method = "Account.Delete_Run", Date = DateTime.Now, LogMessage = "Deleting users from UsersForDeleting", UserName = path });
+
                     foreach (string user in UsersForDeleting)
                     {
                         string[] delUser = user.Split(new char[] { ':' });
@@ -95,10 +94,7 @@ namespace FileLibrary
             if (check)
             {
                 logging.Invoke(LogIO.mainLog, new Log() { Method = "Account.Delete_Run", Date = DateTime.Now, LogMessage = "UsersDeleted", UserName = path });
-                lock (locker)
-                {
-                    File.WriteAllLines(path, allUsersFromFile);
-                }
+                lock (locker) File.WriteAllLines(path, allUsersFromFile);
             }
             if (allUsersFromFile.Count < 10)
             {
