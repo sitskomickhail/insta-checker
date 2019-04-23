@@ -80,8 +80,8 @@
                 <GroupBox Header="Результат работы" Margin="5, 15, 5, 5">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="0.8*"/>
-                            <ColumnDefinition Width="0.2*"/>
+                            <ColumnDefinition Width="0.75*"/>
+                            <ColumnDefinition Width="0.25*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>

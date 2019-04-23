@@ -93,7 +93,7 @@ namespace Instagram_Checker
                 Task.Run(() => ControlWorker_Run());
 
                 btnLoad.IsEnabled = false;
-                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Start check info", UserName = null });
+                lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Start check info", UserName = null });
 
                 _model.InitProxy((bool)cbApiProxy.IsChecked ? true : false, _proxyWindow.AllLinks); //List<strings>
 
@@ -177,6 +177,8 @@ namespace Instagram_Checker
                 });
                 Dispatcher?.Invoke(() =>
                 {
+                    //if (_model.AccsSwitched > 100000 && _model.AccsSwitched < 1000000 && lbAllAccountsSwitched.Margin == new Thickness(0, 10, 6, 0))
+                    //    lbAllAccountsSwitched.Margin = new Thickness(0, 10, 7, 0);
                     lbAllAccountsSwitched.Content = _model.AccsSwitched.ToString();
                 });
                 Dispatcher?.Invoke(() =>
@@ -203,12 +205,6 @@ namespace Instagram_Checker
             DateTime time = DateTime.Now;
             while (!_model.IsProgramComplitlyEnded)
             {
-                if (DateTime.Now.Minute - time.Minute >= 6)
-                {
-                    lock(LogIO.locker) logging.Invoke("EasyLog.log", new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Update proxy... updated = {_model.GetProxy.CountProxy}", UserName = null });
-                    time = DateTime.Now;
-                }
-
                 lock (_model.locker)
                 {
                     if (_model.AccountInfoDataSet_Required.Count > 0)
@@ -284,25 +280,25 @@ namespace Instagram_Checker
             {
                 if (_model.IsAccountInited && countAcc == 0)
                 {
-                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready. Первый файл вернул {_model.GetAccounts.CountUsers} аккаунтов", UserName = null });
+                    lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready. Первый файл вернул {_model.GetAccounts.CountUsers} аккаунтов", UserName = null });
                     countAcc++;
                 }
 
                 if (_model.IsProxyInited && countPrx == 0)
                 {
-                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Proxy are ready ({_model.GetProxy.CountProxy})", UserName = null });
+                    lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Proxy are ready ({_model.GetProxy.CountProxy})", UserName = null });
                     countPrx++;
                 }
 
                 if (_model.IsMailsReady && countMail == 0)
                 {
-                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
+                    lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
                     countMail++;
                 }
 
                 if (_model.IsAgentsInited && countAgents == 0)
                 {
-                    lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Agents are ready ({_model.GetUserAgents.CountAgents})", UserName = null });
+                    lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Agents are ready ({_model.GetUserAgents.CountAgents})", UserName = null });
                     countAgents++;
                 }
 
@@ -311,15 +307,15 @@ namespace Instagram_Checker
             }
 
             if (countPrx == 0)
-                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Proxy are ready ({_model.GetProxy.CountProxy})", UserName = null });
+                lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Proxy are ready ({_model.GetProxy.CountProxy})", UserName = null });
             else if (countAcc == 0)
-                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready ({_model.GetAccounts.CountUsers})", UserName = null });
+                lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Accounts are ready ({_model.GetAccounts.CountUsers})", UserName = null });
             else if (countMail == 0)
-                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
+                lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Mail accounts are ready ({_model.GetAccountsMail.CountMails})", UserName = null });
             else if (countAgents == 0)
-                lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Agents are ready ({_model.GetUserAgents.CountAgents})", UserName = null });
+                lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = $"Agents are ready ({_model.GetUserAgents.CountAgents})", UserName = null });
 
-            lock(LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Програма готова к запуску.\nВыставьте количество потоков, а также задержку", UserName = null });
+            lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, Method = "MainWindow", LogMessage = "Програма готова к запуску.\nВыставьте количество потоков, а также задержку", UserName = null });
             Dispatcher.Invoke(() =>
             {
                 btnStart.IsEnabled = true;

@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using InstaLog;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +11,7 @@ namespace Instagram_Checker
 {
     public partial class ProxyOptionWindow : Window
     {
+        LogIO.Logging logging = new LogIO.Logging(LogIO.WriteLog);
         private const string _cryPath = "links.prvx";
         public List<string> AllLinks { get; set; }
 
@@ -60,18 +62,25 @@ namespace Instagram_Checker
 
         private void btnOk_Click(object sender, RoutedEventArgs e)
         {
-            string hrefs = tbLinks.Text;
-            var encode = Encoding.UTF32;
-            File.WriteAllText(_cryPath, hrefs, encode);
-            AllLinks = File.ReadAllLines(_cryPath).ToList();
-            this.Close();
+            try
+            {
+                string hrefs = tbLinks.Text;
+                var encode = Encoding.UTF32;
+                File.WriteAllText(_cryPath, hrefs, encode);
+                AllLinks = File.ReadAllLines(_cryPath).ToList();
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                logging.Invoke("prvLog.log", new Log() { Date = DateTime.Now, LogMessage = $"{ex.Message}", Method = "btnOk_Click" });
+            }
         }
 
         private void btnAppendAllLinks_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Title = "Choose file with links";
-            ofd.Filter = "Text file (*.txt) | *.txt";
+            ofd.Filter = "Compiled proxy file (*.prvx) | *.prvx|Text file (*.txt) | *.txt";
             if (ofd.ShowDialog().Value == true)
                 tbLinks.Text = File.ReadAllText(ofd.FileName);
         }

@@ -42,7 +42,7 @@ namespace Instagram_Checker.BLL
         public List<string> AccountInfoDataSet_Required { get; private set; }
         public List<string> AccountInfoDataSet_Success { get; private set; }
 
-        List<Dictionary<string, object>> _deleteProxy;
+        //List<Dictionary<string, object>> _deleteProxy;
 
         public Proxy GetProxy { get { return _proxy; } }
         public Accounts GetAccounts { get { return _account; } }
@@ -65,7 +65,7 @@ namespace Instagram_Checker.BLL
             AccountInfoDataSet_Required = new List<string>();
 
             _noMoreProxy = true;
-            _deleteProxy = new List<Dictionary<string, object>>();
+            //_deleteProxy = new List<Dictionary<string, object>>();
 
             _proxy = new Proxy();
             _account = new Accounts();
@@ -186,27 +186,28 @@ namespace Instagram_Checker.BLL
         #region AsyncMethods
         private async void CheckInsta_DoWork(object sender, DoWorkEventArgs e)
         {
+            _threadCount++;
             List<Dictionary<string, object>> proxyOptions = new List<Dictionary<string, object>>();
 
             int checkPos = 0;
             bool threadIsWorking = true;
             int tryToFindCookies0 = 0;
-            while ((!_account.AllPathChecked) || _account.CountUsers != 0)
+            while ((!_account.AllPathChecked) && _account.CountUsers > 500)
             {
                 int proxyPos = 0;
                 for (int j = 0; j < 25; j++)
                 {
                     try
                     {
-                        if (_deleteProxy.Contains(_proxy.InstaProxies[0]))
-                        {
-                            lock (_proxy.locker)
-                            {
-                                _proxy.InstaProxies.Remove(_proxy.InstaProxies[0]);
-                                j--;
-                                continue;
-                            }
-                        }
+                        //if (_deleteProxy.Contains(_proxy.InstaProxies[0]))
+                        //{
+                        //    lock (_proxy.locker)
+                        //    {
+                        //        _proxy.InstaProxies.Remove(_proxy.InstaProxies[0]);
+                        //        j--;
+                        //        continue;
+                        //    }
+                        //}
                         lock (_proxy.locker)
                         {
                             proxyOptions.Add(_proxy.InstaProxies[0]);
@@ -236,7 +237,7 @@ namespace Instagram_Checker.BLL
                     Dictionary<string, object> valueProxy = proxyOptions[Randomer.Next(0, proxyOptions.Count)];
 
                     lock (_account.locker)
-                        if (_account.CountUsers <= 500 && !_account.AllPathChecked)
+                        if (_account.CountUsers <= 150 && !_account.AllPathChecked)
                         {
                             _account.SetUser();
                         }
@@ -262,9 +263,8 @@ namespace Instagram_Checker.BLL
                                 instaPassword = tempAcc["instaPassword"];
                             }
                         }
-                        catch (Exception ex)
+                        catch
                         {
-                            Debug.WriteLine(ex.Message);
                             threadIsWorking = false;
                             break;
                         }
@@ -349,26 +349,14 @@ namespace Instagram_Checker.BLL
                                     {
                                         string goodValidResult = profile.form_data.username + ":" + writePassword + ":" + resMail["mailLogin"] + ":" + resMail["mailPassword"];
                                         AccountInfoDataSet_Success.Add(goodValidResult);
-                                        lock (LogIO.locker) logging.Invoke(LogIO.easyPath, new Log()
-                                        {
-                                            UserName = $"{profile.form_data.username}:{writePassword}",
-                                            Date = DateTime.Now,
-                                            LogMessage = "Good Valid",
-                                            Method = "Model.CheckInsta"
-                                        });
+                                        lock (LogIO.locker) logging.Invoke(LogIO.easyPath, new Log() { UserName = $"{profile.form_data.username}:{writePassword}", Date = DateTime.Now, LogMessage = "Good Valid", Method = "Model.CheckInsta" });
                                         lock (_fileWorker.locker) _fileWorker.GoodValid(goodValidResult);
                                     }
                                     else
                                     {
                                         string mailNotConfirmedResult = profile.form_data.username + ":" + writePassword + ":" + resMail["mailLogin"] + ":" + resMail["mailPassword"];
                                         AccountInfoDataSet_Success.Add(mailNotConfirmedResult);
-                                        lock (LogIO.locker) logging.Invoke(LogIO.easyPath, new Log()
-                                        {
-                                            UserName = $"{profile.form_data.username}:{writePassword}",
-                                            Date = DateTime.Now,
-                                            LogMessage = $"Mail have troubles. Account not confirmed, but mail changed",
-                                            Method = "Model.CheckInsta"
-                                        });
+                                        lock (LogIO.locker) logging.Invoke(LogIO.easyPath, new Log() { UserName = $"{profile.form_data.username}:{writePassword}", Date = DateTime.Now, LogMessage = $"Mail have troubles. Account not confirmed, but mail changed", Method = "Model.CheckInsta" });
                                         lock (_fileWorker.locker) _fileWorker.BadMail(mailNotConfirmedResult);
                                     }
                                 }
@@ -392,7 +380,6 @@ namespace Instagram_Checker.BLL
                         else if (loggedIn.status == "checkpoint_required")//means that account is required
                         {
                             string account = $"{instaLogin}:{instaPassword}";
-                            lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Challenge required! {account}", Method = "Model.CheckInsta" });
                             lock (LogIO.locker) logging.Invoke(LogIO.easyPath, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Challenge required! {account}", Method = "Model.CheckInsta" });
 
                             lock (locker)
@@ -409,10 +396,10 @@ namespace Instagram_Checker.BLL
                             i--;
                             check = false;
                         }
-                        else
-                        {
-                            lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Bad Credentials", Method = "Model.CheckInsta" });
-                        }
+                        //else
+                        //{
+                        //    lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Bad Credentials", Method = "Model.CheckInsta" });
+                        //}
                     }
                     catch (Exception ex)
                     {
@@ -421,7 +408,7 @@ namespace Instagram_Checker.BLL
                             Debug.WriteLine("Remote Server");
                             lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Unable to connect to remote server! Switch proxy", Method = "Model.CheckInsta" });
                             lock (locker) ProxyBlocked++;
-                            lock (locker) _deleteProxy.Add(valueProxy);
+                            //lock (locker) _deleteProxy.Add(valueProxy);
                             lock (locker) ProxySwitched++;
                             proxyOptions.Remove(valueProxy);
                             checkPos = 0;
@@ -431,7 +418,7 @@ namespace Instagram_Checker.BLL
                         {
                             lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception 400! Bad request! Switch proxy", Method = "Model.CheckInsta" });
                             lock (locker) ProxyBlocked++;
-                            lock (locker) _deleteProxy.Add(valueProxy);
+                            //lock (locker) _deleteProxy.Add(valueProxy);
                             lock (locker) ProxySwitched++;
                             proxyOptions.Remove(valueProxy);
                             checkPos = 0;
@@ -440,6 +427,7 @@ namespace Instagram_Checker.BLL
                         else
                         {
                             lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"Exception! {ex.Message} -- {ex.Source}", Method = "Model.CheckInsta" });
+                            checkPos++;
                         }
 
                         i--;
@@ -470,7 +458,7 @@ namespace Instagram_Checker.BLL
         {
             while (!IsProgramComplitlyEnded)
             {
-                Thread.Sleep(300000);
+                Thread.Sleep(200000);
                 lock (_account.locker)
                 {
                     _account.DeleteAccountsFromFile();
@@ -483,6 +471,7 @@ namespace Instagram_Checker.BLL
             while (!IsProgramComplitlyEnded)
             {
                 Thread.Sleep(600000);
+                lock (LogIO.locker) logging.Invoke(LogIO.mainLog, new Log() { UserName = null, Date = DateTime.Now, LogMessage = $"accounts in current time = {_account.CountUsers}", Method = "Model.Helper(CheckInsta)" });
                 lock (_accMails.locker)
                 {
                     _accMails.DeleteMailFromFile();
@@ -493,10 +482,12 @@ namespace Instagram_Checker.BLL
 
         private void CheckThreads_DoWork(object sender, DoWorkEventArgs e)
         {
+            Thread.Sleep(600000);
             while (_threadCount > 0)
             {
                 Thread.Sleep(5000);
             }
+            _account.DeleteAllPaths();
             IsProgramComplitlyEnded = true;
         }
         #endregion

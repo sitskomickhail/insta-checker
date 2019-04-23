@@ -42,6 +42,8 @@ namespace FileLibrary
             _users = new List<Dictionary<string, string>>();
             _paths = new List<string>();
             _all_paths = new List<string>();
+
+            _currentPosition = 1;
         }
 
         private void Delete_Run(string path)
@@ -83,7 +85,6 @@ namespace FileLibrary
                             if (_users[i]["instaLogin"] == tempDict["instaLogin"] && _users[i]["instaPassword"] == tempDict["instaPassword"])
                             {
                                 _users.Remove(_users[i]);
-
                             }
                         }
                     }
@@ -135,6 +136,7 @@ namespace FileLibrary
         {
             if (!AllPathChecked)
             {
+                logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, LogMessage = $"Curent users count = {_users.Count} currentPosition = {_currentPosition} files remained = {_all_paths.Count}", Method = "Account.SetUser" });
                 string filePath = _paths[0];
                 string[] str = File.ReadAllLines(filePath);
                 _all_paths.Add(filePath);
@@ -172,6 +174,13 @@ namespace FileLibrary
                 {
                     AllPathChecked = true;
                 }
+
+                if (_currentPosition > 2)
+                {
+                    _all_paths.Remove(_all_paths[0]);
+                    File.Delete(_all_paths[0]);
+                }
+
                 string[] fileName = filePath.Split(new char[] { '\\' });
                 lock (LogIO.locker)
                 {
@@ -185,6 +194,14 @@ namespace FileLibrary
             }
             else
                 logging.Invoke(LogIO.mainLog, new Log() { Date = DateTime.Now, LogMessage = $"All path checked... filesCount = {_filesCount} currentPosition = {_currentPosition}", Method = "Account.SetUser" });
+        }
+
+        public void DeleteAllPaths()
+        {
+            for (int i = 0; i < _all_paths.Count; i++)
+            {
+                lock (locker) File.Delete(_all_paths[i]);
+            }
         }
     }
 }
